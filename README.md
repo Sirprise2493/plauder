@@ -17,159 +17,159 @@ Dieses Repo enthält das **Datenbank-Schema** (grafisch als ERD) für eine Chat-
 ```mermaid
 erDiagram
   users {
-    uuid id PK
-    text username
-    text email
-    text password_digest
-    text role
-    text public_key
-    timestamptz created_at
-    timestamptz updated_at
+    string id
+    string username
+    string email
+    string password_digest
+    string role
+    string public_key
+    string created_at
+    string updated_at
   }
 
   friendships {
-    uuid id PK
-    uuid user_id FK
-    uuid friend_id FK
-    text status
-    timestamptz created_at
-    timestamptz updated_at
+    string id
+    string user_id
+    string friend_id
+    string status
+    string created_at
+    string updated_at
   }
 
   devices {
-    uuid id PK
-    uuid user_id FK
-    text platform
-    text push_token
-    timestamptz last_seen_at
-    timestamptz created_at
-    timestamptz updated_at
+    string id
+    string user_id
+    string platform
+    string push_token
+    string last_seen_at
+    string created_at
+    string updated_at
   }
 
   conversations {
-    uuid id PK
-    text kind
-    text title
-    uuid created_by_id FK
-    timestamptz created_at
-    timestamptz updated_at
+    string id
+    string kind
+    string title
+    string created_by_id
+    string created_at
+    string updated_at
   }
 
   conversation_memberships {
-    uuid id PK
-    uuid conversation_id FK
-    uuid user_id FK
-    text role
-    timestamptz joined_at
-    timestamptz left_at
-    uuid last_read_message_id FK
+    string id
+    string conversation_id
+    string user_id
+    string role
+    string joined_at
+    string left_at
+    string last_read_message_id
   }
 
   direct_conversations {
-    uuid conversation_id PK_FK
-    uuid user_low_id FK
-    uuid user_high_id FK
+    string conversation_id
+    string user_low_id
+    string user_high_id
   }
 
   messages {
-    uuid id PK
-    uuid conversation_id FK
-    uuid sender_id FK
-    uuid client_message_id
-    text message_type
-    bytea encrypted_payload
-    jsonb metadata
-    uuid reply_to_message_id FK
-    timestamptz sent_at
-    timestamptz edited_at
-    timestamptz deleted_at
+    string id
+    string conversation_id
+    string sender_id
+    string client_message_id
+    string message_type
+    string encrypted_payload
+    string metadata
+    string reply_to_message_id
+    string sent_at
+    string edited_at
+    string deleted_at
   }
 
   message_receipts {
-    uuid id PK
-    uuid message_id FK
-    uuid user_id FK
-    text status
-    timestamptz delivered_at
-    timestamptz read_at
+    string id
+    string message_id
+    string user_id
+    string status
+    string delivered_at
+    string read_at
   }
 
   message_reactions {
-    uuid id PK
-    uuid message_id FK
-    uuid user_id FK
-    text emoji
-    timestamptz created_at
+    string id
+    string message_id
+    string user_id
+    string emoji
+    string created_at
   }
 
   message_media {
-    uuid id PK
-    uuid message_id FK
-    text kind
+    string id
+    string message_id
+    string kind
     int duration_ms
-    text mime_type
-    bigint size_bytes
-    jsonb extra
+    string mime_type
+    int size_bytes
+    string extra
   }
 
   spellcheck_runs {
-    uuid id PK
-    uuid message_id FK
-    text model_version
-    text input_hash
-    jsonb suggestions
-    boolean accepted
+    string id
+    string message_id
+    string model_version
+    string input_hash
+    string suggestions
+    string accepted
   }
 
   transcriptions {
-    uuid id PK
-    uuid message_id FK
-    text provider
-    text status
-    text language
-    text text
-    numeric confidence
+    string id
+    string message_id
+    string provider
+    string status
+    string language
+    string text
+    float confidence
   }
 
   moderation_checks {
-    uuid id PK
-    uuid message_id FK
-    text provider
-    text status
-    numeric score
-    jsonb categories
-    boolean flagged
+    string id
+    string message_id
+    string provider
+    string status
+    float score
+    string categories
+    string flagged
   }
 
   moderation_incidents {
-    uuid id PK
-    uuid user_id FK
-    uuid message_id FK
-    text severity
-    text state
-    uuid opened_by_id FK
-    text notes
+    string id
+    string user_id
+    string message_id
+    string severity
+    string state
+    string opened_by_id
+    string notes
   }
 
   calls {
-    uuid id PK
-    uuid conversation_id FK
-    text call_type
-    uuid started_by_id FK
-    text status
-    timestamptz started_at
-    timestamptz ended_at
-    text provider_room_id
+    string id
+    string conversation_id
+    string call_type
+    string started_by_id
+    string status
+    string started_at
+    string ended_at
+    string provider_room_id
   }
 
   call_participants {
-    uuid id PK
-    uuid call_id FK
-    uuid user_id FK
-    uuid device_id FK
-    timestamptz joined_at
-    timestamptz left_at
-    text role
+    string id
+    string call_id
+    string user_id
+    string device_id
+    string joined_at
+    string left_at
+    string role
   }
 
   users ||--o{ devices : has
