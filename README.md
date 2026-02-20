@@ -1,6 +1,6 @@
 # Social Media / Chat App (WhatsApp-like) – Schema (ERD)
 
-Dieses Repo enthält das **Datenbank-Schema** (grafisch als ERD) für eine Chat-App mit:
+**Datenbank-Schema** (grafisch als ERD) für Plauder mit:
 - 1:1 Chats & Gruppen
 - Nachrichten + Read/Delivery
 - Dateien/Medien (Audio/Video/File)
