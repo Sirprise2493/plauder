@@ -17,88 +17,96 @@ Dieses Repo enthält das **Datenbank-Schema** (grafisch als ERD) für eine Chat-
 ```mermaid
 erDiagram
   users {
-    string id
-    string username
-    string email
-    string created_at
+    int id PK
+    varchar username
+    varchar email
+    varchar password
+    varchar status
   }
 
-  conversations {
-    string id
-    string kind
-    string title
-    string created_by_id
-    string created_at
+  friendships {
+    int id PK
+    int requester_id FK
+    int receiver_id FK
+    varchar friendship_status
   }
 
-  conversation_memberships {
-    string id
-    string conversation_id
-    string user_id
-    string role
-    string joined_at
-    string left_at
+  chats {
+    int id PK
+    varchar chat_type
+    varchar title
+  }
+
+  chat_memberships {
+    int chat_id FK
+    int user_id FK
   }
 
   messages {
-    string id
-    string conversation_id
-    string sender_id
-    string message_type
-    string content_ciphertext
-    string created_at
-    string reply_to_message_id
+    int id PK
+    int sender_id FK
+    int chat_id FK
+    varchar message_type
+    text content
   }
 
-  message_receipts {
-    string id
-    string message_id
-    string user_id
-    string status
-    string delivered_at
-    string read_at
+  message_warnings {
+    int id PK
+    text response_of_ai
+    boolean dangerous_message
+    int message_id FK
   }
 
-  ai_message_jobs {
-    string id
-    string message_id
-    string kind
-    string status
-    string result
-    string score
-    string created_at
+  message_ai_corrections {
+    int id PK
+    int message_id FK
+    text message_corrected_by_ai
+  }
+
+  message_attachments {
+    int id PK
+    int message_id FK
+    varchar filename
+    int duration_ms
+    int byte_size
+    int width
+    int height
   }
 
   calls {
-    string id
-    string conversation_id
-    string call_type
-    string status
-    string started_by_id
-    string started_at
-    string ended_at
+    int id PK
+    int chat_id FK
+    int initiator_id FK
+    varchar call_type
+    varchar status
+    datetime stated_at
+    datetime ended_at
   }
 
   call_participants {
-    string id
-    string call_id
-    string user_id
-    string joined_at
-    string left_at
+    int id PK
+    int call_id FK
+    int user_id FK
+    varchar state
+    boolean camera_enabled
+    boolean mic_enabled
   }
 
-  users ||--o{ conversation_memberships : joins
-  conversations ||--o{ conversation_memberships : has
+  users ||--o{ friendships : requester_id
+  users ||--o{ friendships : receiver_id
 
-  conversations ||--o{ messages : contains
-  users ||--o{ messages : sends
-  messages ||--o{ messages : replies_to
+  users ||--o{ chat_memberships : user_id
+  chats ||--o{ chat_memberships : chat_id
 
-  messages ||--o{ message_receipts : receipts
-  users ||--o{ message_receipts : sees
+  chats ||--o{ messages : chat_id
+  users ||--o{ messages : sender_id
 
-  messages ||--o{ ai_message_jobs : ai_checks
+  messages ||--o{ message_warnings : message_id
+  messages ||--o{ message_ai_corrections : message_id
+  messages ||--o{ message_attachments : message_id
 
-  conversations ||--o{ calls : has
-  calls ||--o{ call_participants : participants
-  users ||--o{ call_participants : joins
+  chats ||--o{ calls : chat_id
+  users ||--o{ calls : initiator_id
+
+  calls ||--o{ call_participants : call_id
+  users ||--o{ call_participants : user_id
