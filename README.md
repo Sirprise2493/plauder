@@ -22,6 +22,8 @@ erDiagram
     varchar email
     varchar password
     varchar status
+    datetime created_at
+    datetime updated_at
   }
 
   friendships {
@@ -29,17 +31,23 @@ erDiagram
     int requester_id FK
     int receiver_id FK
     varchar friendship_status
+    datetime created_at
+    datetime updated_at
   }
 
   chats {
     int id PK
     varchar chat_type
     varchar title
+    datetime created_at
+    datetime updated_at
   }
 
   chat_memberships {
     int chat_id FK
     int user_id FK
+    datetime created_at
+    datetime updated_at
   }
 
   messages {
@@ -48,6 +56,8 @@ erDiagram
     int chat_id FK
     varchar message_type
     text content
+    datetime created_at
+    datetime updated_at
   }
 
   message_warnings {
@@ -55,12 +65,16 @@ erDiagram
     text response_of_ai
     boolean dangerous_message
     int message_id FK
+    datetime created_at
+    datetime updated_at
   }
 
   message_ai_corrections {
     int id PK
     int message_id FK
     text message_corrected_by_ai
+    datetime created_at
+    datetime updated_at
   }
 
   message_attachments {
@@ -71,6 +85,8 @@ erDiagram
     int byte_size
     int width
     int height
+    datetime created_at
+    datetime updated_at
   }
 
   calls {
@@ -81,6 +97,8 @@ erDiagram
     varchar status
     datetime stated_at
     datetime ended_at
+    datetime created_at
+    datetime updated_at
   }
 
   call_participants {
@@ -90,6 +108,8 @@ erDiagram
     varchar state
     boolean camera_enabled
     boolean mic_enabled
+    datetime created_at
+    datetime updated_at
   }
 
   users ||--o{ friendships : requester_id
