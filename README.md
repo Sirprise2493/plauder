@@ -11,9 +11,6 @@ Dieses Repo enthält das **Datenbank-Schema** (grafisch als ERD) für eine Chat-
 
 ## ERD (Mermaid)
 
-> Hinweis: GitHub rendert Mermaid direkt in Markdown. Falls du nur Code siehst,
-> prüfe ob Mermaid in deiner GitHub-Org/Repo erlaubt ist.
-
 ```mermaid
 erDiagram
   users {
