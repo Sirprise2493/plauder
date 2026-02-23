@@ -18,95 +18,120 @@ erDiagram
     varchar username
     varchar email
     varchar password
-    varchar status
+    int status
     datetime created_at
     datetime updated_at
+    int created_by FK
+    int updated_by FK
   }
 
   friendships {
     int id PK
     int requester_id FK
     int receiver_id FK
-    varchar friendship_status
+    int friendship_status
+    boolean active
     datetime created_at
     datetime updated_at
+    int created_by FK
+    int updated_by FK
   }
 
   chats {
     int id PK
-    varchar chat_type
+    int chat_type
     varchar title
     datetime created_at
     datetime updated_at
+    int created_by FK
+    int updated_by FK
   }
 
   chat_memberships {
-    int chat_id FK
+    int id PK
     int user_id FK
+    int chat_id FK
     datetime created_at
     datetime updated_at
+    int created_by FK
+    int updated_by FK
   }
 
   messages {
     int id PK
     int sender_id FK
     int chat_id FK
-    varchar message_type
+    int message_type
     text content
     datetime created_at
     datetime updated_at
+    int created_by FK
+    int updated_by FK
   }
 
   message_warnings {
     int id PK
+    int message_id FK
     text response_of_ai
     boolean dangerous_message
-    int message_id FK
+    int ai_type
     datetime created_at
     datetime updated_at
+    int created_by FK
+    int updated_by FK
   }
 
   message_ai_corrections {
     int id PK
     int message_id FK
     text message_corrected_by_ai
+    int ai_type
     datetime created_at
     datetime updated_at
+    int created_by FK
+    int updated_by FK
   }
 
   message_attachments {
     int id PK
     int message_id FK
     varchar filename
+    int file_type
     int duration_ms
     int byte_size
     int width
     int height
     datetime created_at
     datetime updated_at
+    int created_by FK
+    int updated_by FK
   }
 
   calls {
     int id PK
     int chat_id FK
     int initiator_id FK
-    varchar call_type
-    varchar status
-    datetime stated_at
+    int call_type
+    int status
+    datetime started_at
     datetime ended_at
     datetime created_at
     datetime updated_at
+    int created_by FK
+    int updated_by FK
   }
 
   call_participants {
     int id PK
     int call_id FK
     int user_id FK
-    varchar state
+    int state
     boolean camera_enabled
     boolean mic_enabled
     datetime created_at
     datetime updated_at
+    int created_by FK
+    int updated_by FK
   }
 
   users ||--o{ friendships : requester_id
