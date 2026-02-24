@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  sender: one
+  chat: one
+  message_type: 1
+  content: MyText
+
+two:
+  sender: two
+  chat: two
+  message_type: 1
+  content: MyText

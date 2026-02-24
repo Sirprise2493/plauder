@@ -1,0 +1,39 @@
+module Api
+  module V1
+    class BaseController < ApplicationController
+      before_action :require_authentication!
+
+      rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
+      rescue_from ActiveRecord::RecordInvalid, with: :render_unprocessable_entity
+      rescue_from ActionController::ParameterMissing, with: :render_bad_request
+
+      protected
+
+      def require_authentication!
+        unless user_signed_in?
+          render json: { error: "Nicht authentifiziert" }, status: :unauthorized
+        end
+      end
+
+      def ensure_chat_member!(chat)
+        return if chat.chat_memberships.exists?(user_id: current_user.id)
+
+        render json: { error: "Zugriff verweigert: kein Chat-Mitglied" }, status: :forbidden
+      end
+
+      private
+
+      def render_not_found(error)
+        render json: { error: error.message }, status: :not_found
+      end
+
+      def render_unprocessable_entity(error)
+        render json: { errors: error.record.errors.full_messages }, status: :unprocessable_entity
+      end
+
+      def render_bad_request(error)
+        render json: { error: error.message }, status: :bad_request
+      end
+    end
+  end
+end

@@ -1,0 +1,17 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  chat: one
+  initiator: one
+  call_type: 1
+  status: 1
+  started_at: 2026-02-24 19:11:38
+  ended_at: 2026-02-24 19:11:38
+
+two:
+  chat: two
+  initiator: two
+  call_type: 1
+  status: 1
+  started_at: 2026-02-24 19:11:38
+  ended_at: 2026-02-24 19:11:38
