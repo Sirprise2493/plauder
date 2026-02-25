@@ -5,13 +5,24 @@ module Api
         skip_before_action :require_authentication!, only: [:create]
 
         def create
-          user = User.find_for_authentication(email: params.dig(:user, :email))
+          email = params.dig(:user, :email).to_s.strip
+          password = params.dig(:user, :password).to_s
 
-          if user&.valid_password?(params.dig(:user, :password))
+          user = User.find_for_authentication(email: email)
+
+          if Rails.env.development?
+            Rails.logger.info("[AUTH DEBUG] sign_in attempt email=#{email.inspect}")
+            Rails.logger.info("[AUTH DEBUG] user_found=#{user.present?}")
+            Rails.logger.info("[AUTH DEBUG] password_valid=#{user.present? ? user.valid_password?(password) : false}")
+          end
+
+          if user&.valid_password?(password)
             sign_in(user)
+            set_user_online!(user)
+
             render json: {
               message: "Login erfolgreich",
-              user: user_payload(user)
+              user: user_payload(user.reload)
             }, status: :ok
           else
             render json: { error: "Ungültige E-Mail oder Passwort" }, status: :unauthorized
@@ -20,7 +31,10 @@ module Api
 
         def destroy
           if current_user
-            sign_out(current_user)
+            user = current_user
+            set_user_offline!(user)
+
+            sign_out(user)
             render json: { message: "Logout erfolgreich" }, status: :ok
           else
             render json: { error: "Kein Benutzer eingeloggt" }, status: :unauthorized
@@ -28,6 +42,14 @@ module Api
         end
 
         private
+
+        def set_user_online!(user)
+          user.update_column(:status, User.statuses[:online]) unless user.online?
+        end
+
+        def set_user_offline!(user)
+          user.update_column(:status, User.statuses[:offline]) unless user.offline?
+        end
 
         def user_payload(user)
           {

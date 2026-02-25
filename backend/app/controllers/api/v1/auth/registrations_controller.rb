@@ -9,9 +9,11 @@ module Api
 
           if user.save
             sign_in(user)
+            set_user_online!(user)
+
             render json: {
               message: "Registrierung erfolgreich",
-              user: user_payload(user)
+              user: user_payload(user.reload)
             }, status: :created
           else
             render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
@@ -19,6 +21,10 @@ module Api
         end
 
         private
+
+        def set_user_online!(user)
+          user.update_column(:status, User.statuses[:online]) unless user.online?
+        end
 
         def sign_up_params
           params.require(:user).permit(

@@ -10,21 +10,21 @@ module Api
       protected
 
       def require_authentication!
-        unless user_signed_in?
-          render json: { error: "Nicht authentifiziert" }, status: :unauthorized
-        end
+        return if user_signed_in?
+
+        render json: { errors: ["Nicht authentifiziert"] }, status: :unauthorized
       end
 
       def ensure_chat_member!(chat)
         return if chat.chat_memberships.exists?(user_id: current_user.id)
 
-        render json: { error: "Zugriff verweigert: kein Chat-Mitglied" }, status: :forbidden
+        render json: { errors: ["Zugriff verweigert: kein Chat-Mitglied"] }, status: :forbidden
       end
 
       private
 
       def render_not_found(error)
-        render json: { error: error.message }, status: :not_found
+        render json: { errors: [error.message] }, status: :not_found
       end
 
       def render_unprocessable_entity(error)
@@ -32,7 +32,7 @@ module Api
       end
 
       def render_bad_request(error)
-        render json: { error: error.message }, status: :bad_request
+        render json: { errors: [error.message] }, status: :bad_request
       end
     end
   end
