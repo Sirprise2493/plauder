@@ -1,30 +1,12 @@
-import { useEffect, useState } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import HomeAuth from "./pages/HomeAuth";
 
-type ApiResponse = {
-  message: string;
-};
-
-function App() {
-  const [data, setData] = useState<ApiResponse | null>(null);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    fetch("http://localhost:3000/api/hello")
-      .then(async (res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then((json: ApiResponse) => setData(json))
-      .catch((err: Error) => setError(err.message));
-  }, []);
-
+export default function App() {
   return (
-    <main style={{ padding: "2rem", fontFamily: "sans-serif" }}>
-      <h1>React + TypeScript + Rails + PostgreSQL</h1>
-      {error && <p>Fehler: {error}</p>}
-      {data ? <p>API sagt: {data.message}</p> : <p>Lade...</p>}
-    </main>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<HomeAuth />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
-
-export default App;
