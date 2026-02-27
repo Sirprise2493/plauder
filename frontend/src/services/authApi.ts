@@ -11,47 +11,36 @@ export type User = {
   updated_at: string;
 };
 
-export type SignInInput = {
-  email: string;
-  password: string;
+type AuthSuccess = {
+  message?: string;
+  user: User;
 };
 
-export type SignUpInput = {
+export async function me(): Promise<User> {
+  const data = await apiRequest<{ user: User }>("/me", { method: "GET" });
+  return data.user;
+}
+
+export async function signIn(email: string, password: string): Promise<AuthSuccess> {
+  return apiRequest<AuthSuccess>("/auth/sign_in", {
+    method: "POST",
+    body: JSON.stringify({ user: { email, password } }),
+  });
+}
+
+export async function signUp(params: {
   email: string;
   password: string;
   password_confirmation: string;
   username: string;
   status?: UserStatus;
-};
+}): Promise<AuthSuccess> {
+  return apiRequest<AuthSuccess>("/auth/sign_up", {
+    method: "POST",
+    body: JSON.stringify({ user: params }),
+  });
+}
 
-type AuthResponse = {
-  message?: string;
-  user: User;
-};
-
-export const authApi = {
-  getMe: async (): Promise<User> => {
-    const data = await apiRequest<{ user: User }>("/me", { method: "GET" });
-    return data.user;
-  },
-
-  signIn: async (input: SignInInput): Promise<AuthResponse> => {
-    return apiRequest<AuthResponse>("/auth/sign_in", {
-      method: "POST",
-      body: JSON.stringify({ user: input }),
-    });
-  },
-
-  signUp: async (input: SignUpInput): Promise<AuthResponse> => {
-    return apiRequest<AuthResponse>("/auth/sign_up", {
-      method: "POST",
-      body: JSON.stringify({ user: input }),
-    });
-  },
-
-  signOut: async (): Promise<{ message?: string }> => {
-    return apiRequest<{ message?: string }>("/auth/sign_out", {
-      method: "DELETE",
-    });
-  },
-};
+export async function signOut(): Promise<{ message?: string }> {
+  return apiRequest<{ message?: string }>("/auth/sign_out", { method: "DELETE" });
+}
