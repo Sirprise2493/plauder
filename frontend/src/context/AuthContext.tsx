@@ -1,63 +1,69 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { authApi, type User, type SignInInput, type SignUpInput } from "../services/authApi";
+import React, { createContext, useCallback, useEffect, useMemo, useState } from "react";
+import * as authApi from "../services/authApi";
+import type { User, UserStatus } from "../services/authApi";
 
 type AuthContextValue = {
   user: User | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  signIn: (input: SignInInput) => Promise<void>;
-  signUp: (input: SignUpInput) => Promise<void>;
-  signOut: () => Promise<void>;
+  loading: boolean;
   refreshMe: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (params: {
+    email: string;
+    password: string;
+    password_confirmation: string;
+    username: string;
+    status?: UserStatus;
+  }) => Promise<void>;
+  signOut: () => Promise<void>;
 };
 
-const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+export const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
-  const refreshMe = async () => {
+  const refreshMe = useCallback(async () => {
+    setLoading(true);
     try {
-      const me = await authApi.getMe();
+      const me = await authApi.me();
       setUser(me);
     } catch {
       setUser(null);
+    } finally {
+      setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    (async () => {
-      setIsLoading(true);
-      await refreshMe();
-      setIsLoading(false);
-    })();
   }, []);
 
-  const value = useMemo<AuthContextValue>(() => ({
-    user,
-    isAuthenticated: !!user,
-    isLoading,
-    signIn: async (input) => {
-      const result = await authApi.signIn(input);
-      setUser(result.user);
-    },
-    signUp: async (input) => {
-      const result = await authApi.signUp(input);
-      setUser(result.user);
-    },
-    signOut: async () => {
-      await authApi.signOut();
-      setUser(null);
-    },
-    refreshMe,
-  }), [user, isLoading]);
+  useEffect(() => {
+    void refreshMe();
+  }, [refreshMe]);
+
+  const signIn = useCallback(async (email: string, password: string) => {
+    const res = await authApi.signIn(email, password);
+    setUser(res.user);
+  }, []);
+
+  const signUp = useCallback(async (params: {
+    email: string;
+    password: string;
+    password_confirmation: string;
+    username: string;
+    status?: UserStatus;
+  }) => {
+    const res = await authApi.signUp(params);
+    setUser(res.user);
+  }, []);
+
+  const signOut = useCallback(async () => {
+    await authApi.signOut();
+    setUser(null);
+  }, []);
+
+  const value = useMemo<AuthContextValue>(
+    () => ({ user, loading, refreshMe, signIn, signUp, signOut }),
+    [user, loading, refreshMe, signIn, signUp, signOut]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-export function useAuthContext() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuthContext must be used within AuthProvider");
-  return ctx;
 }

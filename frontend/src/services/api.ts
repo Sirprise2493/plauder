@@ -1,4 +1,6 @@
-export type ApiErrorResponse = {
+const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:3000/api/v1";
+
+export type ApiErrorShape = {
   error?: string;
   errors?: string[];
 };
@@ -8,33 +10,37 @@ function getCsrfToken(): string | null {
   return meta?.getAttribute("content") ?? null;
 }
 
-export const API_BASE = "http://localhost:3000/api/v1";
-
-export async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
+export async function apiRequest<T>(
+  path: string,
+  options: RequestInit = {}
+): Promise<T> {
   const csrfToken = getCsrfToken();
 
   const headers: HeadersInit = {
-    "Content-Type": "application/json",
     ...(options.headers || {}),
   };
 
-  if (csrfToken) {
-    headers["X-CSRF-Token"] = csrfToken;
+  // JSON-Body => Content-Type setzen
+  if (options.body && !(options.body instanceof FormData)) {
+    headers["Content-Type"] = headers["Content-Type"] ?? "application/json";
   }
 
-  const response = await fetch(`${API_BASE}${path}`, {
+  // CSRF nur setzen, wenn vorhanden
+  if (csrfToken) headers["X-CSRF-Token"] = csrfToken;
+
+  const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers,
     credentials: "include",
   });
 
-  const data = (await response.json().catch(() => ({}))) as T & ApiErrorResponse;
+  const data = (await res.json().catch(() => ({}))) as T & ApiErrorShape;
 
-  if (!response.ok) {
+  if (!res.ok) {
     const message =
       (Array.isArray(data.errors) && data.errors.join(", ")) ||
       data.error ||
-      `HTTP ${response.status}`;
+      `HTTP ${res.status}`;
     throw new Error(message);
   }
 
