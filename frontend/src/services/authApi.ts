@@ -1,6 +1,6 @@
 import { apiRequest } from "./api";
 
-export type UserStatus = "offline" | "online" | "away" | "busy";
+export type UserStatus = "offline" | "online";
 
 export type User = {
   id: number;

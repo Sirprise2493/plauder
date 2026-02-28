@@ -123,8 +123,6 @@ export default function HomeAuth() {
                 >
                   <option value="offline">offline</option>
                   <option value="online">online</option>
-                  <option value="away">away</option>
-                  <option value="busy">busy</option>
                 </select>
               </label>
             </>

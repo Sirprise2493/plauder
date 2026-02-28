@@ -5,8 +5,6 @@ class User < ApplicationRecord
   enum :status, {
     offline: 0,
     online: 1,
-    away: 2,
-    busy: 3
   }, default: :offline
 
   has_many :chat_memberships, dependent: :destroy
