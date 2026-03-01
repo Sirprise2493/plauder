@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { apiRequest } from "../services/api";
 import s from "./Contacts.module.css";
@@ -47,7 +48,17 @@ export type RecentChat = {
   users: User[];
 };
 
+type ChatSummary = {
+  id: number;
+  chat_type: "direct" | "group_chat";
+  title: string | null;
+  created_at: string;
+  updated_at: string;
+  users: User[];
+};
+
 export default function Contacts() {
+  const navigate = useNavigate();
   const { user, signOut } = useAuth();
 
   const [friends, setFriends] = useState<User[]>([]);
@@ -244,6 +255,24 @@ export default function Contacts() {
     }
   }
 
+  function handleOpenRecentChat(chatId: number) {
+    navigate(`/chats/${chatId}`);
+  }
+
+  async function handleOpenFriendChat(friendId: number) {
+    try {
+      const chat = await apiRequest<ChatSummary>(`/chats/direct_with/${friendId}`, {
+        method: "GET",
+      });
+
+      navigate(`/chats/${chat.id}`);
+    } catch (err) {
+      setActionMessage(
+        err instanceof Error ? err.message : "Direktchat konnte nicht geöffnet werden"
+      );
+    }
+  }
+
   return (
     <div className={s.wrapper}>
       <ContactsHeader user={user} onLogout={() => void signOut()} />
@@ -271,12 +300,14 @@ export default function Contacts() {
           recentChats={recentChats}
           loadingChats={loadingChats}
           chatsError={chatsError}
+          onOpenChat={handleOpenRecentChat}
         />
 
         <FriendsSection
           friends={friends}
           loadingFriends={loadingFriends}
           friendsError={friendsError}
+          onOpenFriendChat={handleOpenFriendChat}
         />
       </div>
     </div>

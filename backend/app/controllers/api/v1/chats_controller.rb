@@ -29,6 +29,28 @@ module Api
         render json: chats.map { |chat| serialize_recent_chat(chat) }
       end
 
+      def direct_with
+        other_user = User.find(params[:user_id])
+
+        friendship_exists = Friendship.where(
+          friendship_status: :accepted,
+          active: true
+        ).where(
+          "(requester_id = :current_user_id AND receiver_id = :other_user_id) OR (requester_id = :other_user_id AND receiver_id = :current_user_id)",
+          current_user_id: current_user.id,
+          other_user_id: other_user.id
+        ).exists?
+
+        unless friendship_exists
+          return render json: { error: "Keine akzeptierte Freundschaft gefunden" }, status: :forbidden
+        end
+
+        chat = find_direct_chat_between(current_user, other_user)
+        chat ||= create_direct_chat_between!(current_user, other_user)
+
+        render json: serialize_chat(chat)
+      end
+
       def show
         unless @chat.users.exists?(id: current_user.id)
           return render json: { error: "Nicht erlaubt" }, status: :forbidden
@@ -89,6 +111,26 @@ module Api
           ),
           users: chat.users.as_json(only: %i[id username email status])
         }
+      end
+
+      def find_direct_chat_between(user_a, user_b)
+        Chat
+          .includes(:users)
+          .joins(:chat_memberships)
+          .where(chat_type: :direct)
+          .where(chat_memberships: { user_id: [user_a.id, user_b.id] })
+          .group("chats.id")
+          .having("COUNT(DISTINCT chat_memberships.user_id) = 2")
+          .first
+      end
+
+      def create_direct_chat_between!(user_a, user_b)
+        Chat.transaction do
+          chat = Chat.create!(chat_type: :direct)
+          ChatMembership.create!(chat: chat, user: user_a)
+          ChatMembership.create!(chat: chat, user: user_b)
+          chat
+        end
       end
     end
   end

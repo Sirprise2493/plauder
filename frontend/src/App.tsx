@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import HomeAuth from "./pages/HomeAuth";
 import Contacts from "./pages/Contacts";
+import ChatDetail from "./pages/ChatDetail";
 import RequireAuth from "./components/RequireAuth";
 
 export default function App() {
@@ -14,6 +15,15 @@ export default function App() {
           element={
             <RequireAuth>
               <Contacts />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/chats/:id"
+          element={
+            <RequireAuth>
+              <ChatDetail />
             </RequireAuth>
           }
         />

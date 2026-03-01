@@ -80,6 +80,31 @@ u8 = User.create!(
   status: :offline
 )
 
+# Neue User mit offener Anfrage an Sirprise
+u9 = User.create!(
+  email: "hannah@example.com",
+  password: "123456",
+  password_confirmation: "123456",
+  username: "hannah",
+  status: :online
+)
+
+u10 = User.create!(
+  email: "jan@example.com",
+  password: "123456",
+  password_confirmation: "123456",
+  username: "jan",
+  status: :offline
+)
+
+u11 = User.create!(
+  email: "leo@example.com",
+  password: "123456",
+  password_confirmation: "123456",
+  username: "leo",
+  status: :online
+)
+
 puts "Users created: #{User.count}"
 
 # =========================================================
@@ -125,6 +150,28 @@ Friendship.create!(
 
 Friendship.create!(
   requester: u7,
+  receiver: main_user,
+  friendship_status: :pending,
+  active: true
+)
+
+# 3 weitere offene Anfragen an Sirprise
+Friendship.create!(
+  requester: u9,
+  receiver: main_user,
+  friendship_status: :pending,
+  active: true
+)
+
+Friendship.create!(
+  requester: u10,
+  receiver: main_user,
+  friendship_status: :pending,
+  active: true
+)
+
+Friendship.create!(
+  requester: u11,
   receiver: main_user,
   friendship_status: :pending,
   active: true

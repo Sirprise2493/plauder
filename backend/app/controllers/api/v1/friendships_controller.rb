@@ -48,6 +48,48 @@ module Api
       end
 
       def create
+        receiver_id = friendship_params[:receiver_id]
+
+        existing_friendship = Friendship.find_by(
+          requester_id: current_user.id,
+          receiver_id: receiver_id
+        )
+
+        reverse_friendship = Friendship.find_by(
+          requester_id: receiver_id,
+          receiver_id: current_user.id
+        )
+
+        if existing_friendship&.rejected?
+          existing_friendship.update!(
+            friendship_status: :pending,
+            active: true
+          )
+
+          return render json: existing_friendship.as_json(
+            include: {
+              requester: { only: %i[id username email status] },
+              receiver:  { only: %i[id username email status] }
+            }
+          ), status: :created
+        end
+
+        if reverse_friendship&.rejected?
+          reverse_friendship.update!(
+            requester_id: current_user.id,
+            receiver_id: receiver_id,
+            friendship_status: :pending,
+            active: true
+          )
+
+          return render json: reverse_friendship.as_json(
+            include: {
+              requester: { only: %i[id username email status] },
+              receiver:  { only: %i[id username email status] }
+            }
+          ), status: :created
+        end
+
         friendship = Friendship.new(friendship_params.except(:requester_id, :friendship_status, :active))
         friendship.requester = current_user
         friendship.friendship_status = :pending

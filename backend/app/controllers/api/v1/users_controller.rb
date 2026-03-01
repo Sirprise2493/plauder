@@ -17,6 +17,7 @@ module Api
 
         related_user_ids = Friendship
           .where("requester_id = :id OR receiver_id = :id", id: current_user.id)
+          .where(friendship_status: %i[pending accepted blocked], active: true)
           .pluck(:requester_id, :receiver_id)
           .flatten
           .uniq - [current_user.id]

@@ -5,12 +5,14 @@ type Props = {
   recentChats: RecentChat[];
   loadingChats: boolean;
   chatsError: string;
+  onOpenChat: (chatId: number) => void;
 };
 
 export default function RecentChatsSection({
   recentChats,
   loadingChats,
   chatsError,
+  onOpenChat,
 }: Props) {
   return (
     <section className={s.section}>
@@ -26,7 +28,11 @@ export default function RecentChatsSection({
       {!loadingChats && !chatsError && recentChats.length > 0 && (
         <ul className={s.list}>
           {recentChats.map((chat) => (
-            <li key={chat.id} className={s.card}>
+            <li
+              key={chat.id}
+              className={s.cardClickable}
+              onClick={() => onOpenChat(chat.id)}
+            >
               <div>
                 <h3 className={s.username}>{chat.display_name ?? "Unbenannter Chat"}</h3>
                 {chat.last_message ? (

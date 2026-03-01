@@ -5,12 +5,14 @@ type Props = {
   friends: User[];
   loadingFriends: boolean;
   friendsError: string;
+  onOpenFriendChat: (friendId: number) => void;
 };
 
 export default function FriendsSection({
   friends,
   loadingFriends,
   friendsError,
+  onOpenFriendChat,
 }: Props) {
   return (
     <section className={s.section}>
@@ -26,7 +28,11 @@ export default function FriendsSection({
       {!loadingFriends && !friendsError && friends.length > 0 && (
         <ul className={s.list}>
           {friends.map((friend) => (
-            <li key={friend.id} className={s.card}>
+            <li
+              key={friend.id}
+              className={s.cardClickable}
+              onClick={() => onOpenFriendChat(friend.id)}
+            >
               <div>
                 <h3 className={s.username}>{friend.username}</h3>
                 <p className={s.meta}>{friend.email}</p>

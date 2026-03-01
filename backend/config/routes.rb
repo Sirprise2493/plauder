@@ -25,6 +25,7 @@ Rails.application.routes.draw do
       resources :chats do
         collection do
           get :recent
+          get "direct_with/:user_id", to: "chats#direct_with"
         end
 
         resources :chat_memberships, only: %i[index create destroy]

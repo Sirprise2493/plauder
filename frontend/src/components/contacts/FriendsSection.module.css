@@ -30,12 +30,19 @@
   gap: 12px;
 }
 
-.card {
+.cardClickable {
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   padding: 16px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cardClickable:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
 }
 
 .username {
