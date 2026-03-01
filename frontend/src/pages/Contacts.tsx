@@ -3,18 +3,24 @@ import { useAuth } from "../hooks/useAuth";
 import { apiRequest } from "../services/api";
 import s from "./Contacts.module.css";
 
-type UserStatus = "offline" | "online";
+import ContactsHeader from "../components/contacts/ContactsHeader";
+import UserSearchSection from "../components/contacts/UserSearchSection";
+import ReceivedRequestsSection from "../components/contacts/ReceivedRequestsSection";
+import RecentChatsSection from "../components/contacts/RecentChatsSection";
+import FriendsSection from "../components/contacts/FriendsSection";
 
-type User = {
+export type UserStatus = "online" | "offline";
+
+export type User = {
   id: number;
   email: string;
   username: string;
   status: UserStatus;
 };
 
-type FriendshipStatus = "pending" | "accepted" | "rejected" | "blocked";
+export type FriendshipStatus = "pending" | "accepted" | "rejected" | "blocked";
 
-type Friendship = {
+export type Friendship = {
   id: number;
   requester_id: number;
   receiver_id: number;
@@ -26,18 +32,47 @@ type Friendship = {
   receiver: User;
 };
 
+export type RecentChat = {
+  id: number;
+  chat_type: "direct" | "group_chat";
+  title: string | null;
+  display_name: string | null;
+  last_message: {
+    id: number;
+    content: string | null;
+    message_type: string;
+    created_at: string;
+    sender: User;
+  } | null;
+  users: User[];
+};
+
 export default function Contacts() {
   const { user, signOut } = useAuth();
+
   const [friends, setFriends] = useState<User[]>([]);
+  const [recentChats, setRecentChats] = useState<RecentChat[]>([]);
+  const [receivedRequests, setReceivedRequests] = useState<Friendship[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<User[]>([]);
+
   const [loadingFriends, setLoadingFriends] = useState(true);
-  const [error, setError] = useState("");
+  const [loadingChats, setLoadingChats] = useState(true);
+  const [loadingRequests, setLoadingRequests] = useState(true);
+  const [loadingSearch, setLoadingSearch] = useState(false);
+
+  const [friendsError, setFriendsError] = useState("");
+  const [chatsError, setChatsError] = useState("");
+  const [requestsError, setRequestsError] = useState("");
+  const [searchError, setSearchError] = useState("");
+  const [actionMessage, setActionMessage] = useState("");
 
   useEffect(() => {
     async function loadFriends() {
       if (!user) return;
 
       setLoadingFriends(true);
-      setError("");
+      setFriendsError("");
 
       try {
         const friendships = await apiRequest<Friendship[]>("/friendships", {
@@ -52,7 +87,9 @@ export default function Contacts() {
 
         setFriends(mappedFriends);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Freunde konnten nicht geladen werden");
+        setFriendsError(
+          err instanceof Error ? err.message : "Freunde konnten nicht geladen werden"
+        );
       } finally {
         setLoadingFriends(false);
       }
@@ -61,39 +98,187 @@ export default function Contacts() {
     void loadFriends();
   }, [user]);
 
+  useEffect(() => {
+    async function loadRecentChats() {
+      if (!user) return;
+
+      setLoadingChats(true);
+      setChatsError("");
+
+      try {
+        const chats = await apiRequest<RecentChat[]>("/chats/recent", {
+          method: "GET",
+        });
+
+        setRecentChats(chats);
+      } catch (err) {
+        setChatsError(
+          err instanceof Error ? err.message : "Chats konnten nicht geladen werden"
+        );
+      } finally {
+        setLoadingChats(false);
+      }
+    }
+
+    void loadRecentChats();
+  }, [user]);
+
+  useEffect(() => {
+    async function loadReceivedRequests() {
+      if (!user) return;
+
+      setLoadingRequests(true);
+      setRequestsError("");
+
+      try {
+        const requests = await apiRequest<Friendship[]>("/friendships/received_requests", {
+          method: "GET",
+        });
+
+        setReceivedRequests(requests);
+      } catch (err) {
+        setRequestsError(
+          err instanceof Error ? err.message : "Friendship Requests konnten nicht geladen werden"
+        );
+      } finally {
+        setLoadingRequests(false);
+      }
+    }
+
+    void loadReceivedRequests();
+  }, [user]);
+
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setSearchError("");
+      setLoadingSearch(false);
+      return;
+    }
+
+    async function searchUsers() {
+      setLoadingSearch(true);
+      setSearchError("");
+
+      try {
+        const users = await apiRequest<User[]>(
+          `/users?query=${encodeURIComponent(searchQuery.trim())}`,
+          { method: "GET" }
+        );
+
+        setSearchResults(users);
+      } catch (err) {
+        setSearchError(
+          err instanceof Error ? err.message : "User konnten nicht gesucht werden"
+        );
+      } finally {
+        setLoadingSearch(false);
+      }
+    }
+
+    const timeout = window.setTimeout(() => {
+      void searchUsers();
+    }, 250);
+
+    return () => window.clearTimeout(timeout);
+  }, [searchQuery]);
+
+  function addFriendIfMissing(friendToAdd: User) {
+    setFriends((prev) => {
+      if (prev.some((friend) => friend.id === friendToAdd.id)) return prev;
+      return [friendToAdd, ...prev];
+    });
+  }
+
+  async function handleSendFriendRequest(receiverId: number) {
+    setActionMessage("");
+
+    try {
+      await apiRequest<Friendship>("/friendships", {
+        method: "POST",
+        body: JSON.stringify({
+          friendship: {
+            receiver_id: receiverId,
+          },
+        }),
+      });
+
+      setActionMessage("Freundschaftsanfrage gesendet.");
+      setSearchResults((prev) => prev.filter((u) => u.id !== receiverId));
+      setSearchQuery("");
+    } catch (err) {
+      setActionMessage(
+        err instanceof Error ? err.message : "Freundschaftsanfrage konnte nicht gesendet werden"
+      );
+    }
+  }
+
+  async function handleRespondToRequest(
+    friendshipId: number,
+    friendshipStatus: "accepted" | "rejected"
+  ) {
+    setActionMessage("");
+
+    try {
+      const updatedFriendship = await apiRequest<Friendship>(`/friendships/${friendshipId}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          friendship: {
+            friendship_status: friendshipStatus,
+          },
+        }),
+      });
+
+      setReceivedRequests((prev) => prev.filter((request) => request.id !== friendshipId));
+
+      if (friendshipStatus === "accepted") {
+        addFriendIfMissing(updatedFriendship.requester);
+        setActionMessage("Freundschaftsanfrage angenommen.");
+      } else {
+        setActionMessage("Freundschaftsanfrage abgelehnt.");
+      }
+    } catch (err) {
+      setActionMessage(
+        err instanceof Error ? err.message : "Aktion konnte nicht ausgeführt werden"
+      );
+    }
+  }
+
   return (
     <div className={s.wrapper}>
-      <div className={s.header}>
-        <h1 className={s.title}>Kontakte</h1>
-        <button onClick={() => void signOut()} className={s.logoutButton}>
-          Logout
-        </button>
+      <ContactsHeader user={user} onLogout={() => void signOut()} />
+
+      {actionMessage && <p className={s.actionMessage}>{actionMessage}</p>}
+
+      <div className={s.sections}>
+        <UserSearchSection
+          searchQuery={searchQuery}
+          onSearchQueryChange={setSearchQuery}
+          searchResults={searchResults}
+          loadingSearch={loadingSearch}
+          searchError={searchError}
+          onSendFriendRequest={handleSendFriendRequest}
+        />
+
+        <ReceivedRequestsSection
+          receivedRequests={receivedRequests}
+          loadingRequests={loadingRequests}
+          requestsError={requestsError}
+          onRespond={handleRespondToRequest}
+        />
+
+        <RecentChatsSection
+          recentChats={recentChats}
+          loadingChats={loadingChats}
+          chatsError={chatsError}
+        />
+
+        <FriendsSection
+          friends={friends}
+          loadingFriends={loadingFriends}
+          friendsError={friendsError}
+        />
       </div>
-
-      <p className={s.userInfo}>
-        Eingeloggt als: <strong>{user?.username}</strong> ({user?.email})
-      </p>
-
-      <h2 className={s.sectionTitle}>Meine Freunde</h2>
-
-      {loadingFriends && <p className={s.message}>Lade Freunde...</p>}
-      {error && <p className={s.error}>{error}</p>}
-
-      {!loadingFriends && !error && friends.length === 0 && (
-        <p className={s.message}>Du hast noch keine Freunde.</p>
-      )}
-
-      {!loadingFriends && !error && friends.length > 0 && (
-        <ul className={s.list}>
-          {friends.map((friend) => (
-            <li key={friend.id} className={s.card}>
-              <h3 className={s.username}>{friend.username}</h3>
-              <p className={s.meta}>{friend.email}</p>
-              <p className={s.meta}>Status: {friend.status}</p>
-            </li>
-          ))}
-        </ul>
-      )}
     </div>
   );
 }

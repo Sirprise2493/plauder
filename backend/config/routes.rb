@@ -16,9 +16,17 @@ Rails.application.routes.draw do
       get :me, to: "me#show"
 
       resources :users, only: %i[index show update]
-      resources :friendships
+      resources :friendships do
+        collection do
+          get :received_requests
+        end
+      end
 
       resources :chats do
+        collection do
+          get :recent
+        end
+
         resources :chat_memberships, only: %i[index create destroy]
         resources :messages, only: %i[index create]
         resources :calls, only: %i[index create]

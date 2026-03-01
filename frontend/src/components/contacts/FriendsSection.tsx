@@ -1,0 +1,41 @@
+import type { User } from "../../pages/Contacts";
+import s from "./FriendsSection.module.css";
+
+type Props = {
+  friends: User[];
+  loadingFriends: boolean;
+  friendsError: string;
+};
+
+export default function FriendsSection({
+  friends,
+  loadingFriends,
+  friendsError,
+}: Props) {
+  return (
+    <section className={s.section}>
+      <h2 className={s.sectionTitle}>Meine Freunde</h2>
+
+      {loadingFriends && <p className={s.message}>Lade Freunde...</p>}
+      {friendsError && <p className={s.error}>{friendsError}</p>}
+
+      {!loadingFriends && !friendsError && friends.length === 0 && (
+        <p className={s.message}>Du hast noch keine Freunde.</p>
+      )}
+
+      {!loadingFriends && !friendsError && friends.length > 0 && (
+        <ul className={s.list}>
+          {friends.map((friend) => (
+            <li key={friend.id} className={s.card}>
+              <div>
+                <h3 className={s.username}>{friend.username}</h3>
+                <p className={s.meta}>{friend.email}</p>
+                <p className={s.meta}>Status: {friend.status}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}

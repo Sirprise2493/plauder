@@ -5,8 +5,26 @@ module Api
       before_action :authorize_self!, only: %i[update]
 
       def index
-        users = User.order(:id)
-        render json: users.as_json(only: %i[id username status created_at updated_at])
+        users = User.where.not(id: current_user.id)
+
+        if params[:query].present?
+          query = "%#{params[:query].strip.downcase}%"
+          users = users.where(
+            "LOWER(username) LIKE :query OR LOWER(email) LIKE :query",
+            query: query
+          )
+        end
+
+        related_user_ids = Friendship
+          .where("requester_id = :id OR receiver_id = :id", id: current_user.id)
+          .pluck(:requester_id, :receiver_id)
+          .flatten
+          .uniq - [current_user.id]
+
+        users = users.where.not(id: related_user_ids)
+        users = users.order(:username).limit(10)
+
+        render json: users.as_json(only: %i[id username email status])
       end
 
       def show
