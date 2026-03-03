@@ -1,6 +1,7 @@
 import {
   FormEvent,
   KeyboardEvent,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -37,6 +38,24 @@ type Message = {
   updated_at: string;
   sender: User;
 };
+
+function areMessagesEqual(currentMessages: Message[], nextMessages: Message[]) {
+  if (currentMessages.length !== nextMessages.length) return false;
+
+  for (let i = 0; i < currentMessages.length; i += 1) {
+    const currentMessage = currentMessages[i];
+    const nextMessage = nextMessages[i];
+
+    if (
+      currentMessage.id !== nextMessage.id ||
+      currentMessage.updated_at !== nextMessage.updated_at
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
 
 export default function ChatDetail() {
   const { id } = useParams<{ id: string }>();
@@ -78,28 +97,53 @@ export default function ChatDetail() {
     void loadChat();
   }, [id]);
 
-  useEffect(() => {
-    async function loadMessages() {
+  const loadMessages = useCallback(
+    async (options?: { silent?: boolean }) => {
       if (!id) return;
 
-      setLoadingMessages(true);
-      setError("");
+      const isSilent = options?.silent ?? false;
+
+      if (!isSilent) {
+        setLoadingMessages(true);
+        setError("");
+      }
 
       try {
         const data = await apiRequest<Message[]>(`/chats/${id}/messages`, {
           method: "GET",
         });
 
-        setMessages(data);
+        setMessages((prev) => (areMessagesEqual(prev, data) ? prev : data));
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Nachrichten konnten nicht geladen werden");
+        if (!isSilent) {
+          setError(
+            err instanceof Error ? err.message : "Nachrichten konnten nicht geladen werden"
+          );
+        }
       } finally {
-        setLoadingMessages(false);
+        if (!isSilent) {
+          setLoadingMessages(false);
+        }
       }
-    }
+    },
+    [id]
+  );
 
+  useEffect(() => {
     void loadMessages();
-  }, [id]);
+  }, [loadMessages]);
+
+  useEffect(() => {
+    if (!id) return;
+
+    const intervalId = window.setInterval(() => {
+      void loadMessages({ silent: true });
+    }, 3000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [id, loadMessages]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
