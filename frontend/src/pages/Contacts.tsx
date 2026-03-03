@@ -91,9 +91,7 @@ export default function Contacts() {
         });
 
         const mappedFriends = friendships.map((friendship) =>
-          friendship.requester.id === user.id
-            ? friendship.receiver
-            : friendship.requester
+          friendship.requester.id === user.id ? friendship.receiver : friendship.requester
         );
 
         setFriends(mappedFriends);

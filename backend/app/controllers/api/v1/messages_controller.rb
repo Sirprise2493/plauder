@@ -1,8 +1,11 @@
 module Api
   module V1
     class MessagesController < BaseController
+      before_action :authenticate_user!
       before_action :set_chat, only: %i[index create]
       before_action :set_message, only: %i[show update destroy]
+      before_action :ensure_chat_member!, only: %i[index create]
+      before_action :ensure_message_access!, only: %i[show update destroy]
 
       def index
         messages = @chat.messages
@@ -32,8 +35,17 @@ module Api
 
       def create
         message = @chat.messages.new(message_params)
+        message.sender = current_user
         message.save!
-        render json: message.as_json(include: { sender: { only: %i[id username email status] } }), status: :created
+
+        render json: message.as_json(
+          include: {
+            sender: { only: %i[id username email status] },
+            message_attachments: {},
+            message_ai_correction: {},
+            message_warnings: {}
+          }
+        ), status: :created
       end
 
       def update
@@ -56,8 +68,20 @@ module Api
         @message = Message.find(params[:id])
       end
 
+      def ensure_chat_member!
+        return if @chat.users.exists?(id: current_user.id)
+
+        render json: { error: "Nicht erlaubt" }, status: :forbidden
+      end
+
+      def ensure_message_access!
+        return if @message.chat.users.exists?(id: current_user.id)
+
+        render json: { error: "Nicht erlaubt" }, status: :forbidden
+      end
+
       def message_params
-        params.require(:message).permit(:sender_id, :message_type, :content)
+        params.require(:message).permit(:message_type, :content)
       end
     end
   end

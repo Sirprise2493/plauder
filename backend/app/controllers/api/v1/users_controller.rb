@@ -23,7 +23,7 @@ module Api
           .uniq - [current_user.id]
 
         users = users.where.not(id: related_user_ids)
-        users = users.order(:username).limit(10)
+        users = users.order(Arel.sql("LOWER(username) ASC, LOWER(email) ASC")).limit(10)
 
         render json: users.as_json(only: %i[id username email status])
       end
