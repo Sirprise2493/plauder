@@ -19,7 +19,7 @@ class Message < ApplicationRecord
   validates :content, length: { maximum: 10_000 }, allow_blank: true
 
   validate :sender_must_be_member_of_chat
-  validate :content_required_for_text_or_system
+  validate :content_or_attachment_required
 
   private
 
@@ -31,11 +31,12 @@ class Message < ApplicationRecord
     end
   end
 
-  def content_required_for_text_or_system
+  def content_or_attachment_required
     return unless text? || system?
 
-    if content.blank?
-      errors.add(:content, "muss bei Text- oder Systemnachrichten vorhanden sein")
-    end
+    return if content.present?
+    return if message_attachments.loaded? ? message_attachments.any? : message_attachments.exists?
+
+    errors.add(:content, "oder ein Anhang muss vorhanden sein")
   end
 end
