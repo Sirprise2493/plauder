@@ -31,7 +31,10 @@ module Api
       end
 
       def update
-        @message.update!(update_message_params)
+        result = update_message_params
+        return if performed?
+
+        @message.update!(result)
         render json: serialize_message(@message)
       end
 
@@ -94,24 +97,41 @@ module Api
       end
 
       def serialize_messages(messages)
-        messages.as_json(
-          include: {
-            sender: { only: %i[id username email status] },
-            message_attachments: {},
-            message_ai_correction: {},
-            message_warnings: {}
-          }
-        )
+        messages.map { |message| serialize_message(message) }
       end
 
       def serialize_message(message)
         message.as_json(
           include: {
             sender: { only: %i[id username email status] },
-            message_attachments: {},
             message_ai_correction: {},
             message_warnings: {}
           }
+        ).merge(
+          message_attachments: message.message_attachments.order(:id).map do |attachment|
+            serialize_attachment(attachment)
+          end
+        )
+      end
+
+      def serialize_attachment(attachment)
+        attachment.as_json(
+          only: %i[
+            id
+            message_id
+            filename
+            file_type
+            durations_ms
+            byte_size
+            width
+            height
+            created_at
+            updated_at
+          ]
+        ).merge(
+          file_url: attachment.file.attached? ? rails_blob_url(attachment.file) : nil,
+          download_url: attachment.file.attached? ? download_api_v1_message_message_attachment_url(attachment.message, attachment) : nil,
+          content_type: attachment.file.attached? ? attachment.file.blob.content_type : nil
         )
       end
 

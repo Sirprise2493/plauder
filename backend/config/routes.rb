@@ -34,7 +34,12 @@ Rails.application.routes.draw do
       end
 
       resources :messages, only: %i[show update destroy] do
-        resources :message_attachments, only: %i[index create show update destroy]
+        resources :message_attachments, only: %i[index create show update destroy] do
+          member do
+            get :download
+          end
+        end
+
         resource  :message_ai_correction, only: %i[show create update destroy]
         resources :message_warnings, only: %i[index create show update destroy]
       end
