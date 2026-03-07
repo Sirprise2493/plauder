@@ -3,6 +3,7 @@ import HomeAuth from "./pages/HomeAuth";
 import Contacts from "./pages/Contacts";
 import ChatDetail from "./pages/ChatDetail";
 import RequireAuth from "./components/RequireAuth";
+import Uebungen from "./uebungen/Uebungen";
 
 export default function App() {
   return (
@@ -29,6 +30,12 @@ export default function App() {
         />
 
         <Route path="*" element={<Navigate to="/" replace />} />
+
+        <Route
+          path="/uebungen"
+          element={ <Uebungen /> }
+        />
+
       </Routes>
     </BrowserRouter>
   );
