@@ -1,7 +1,9 @@
 Rails.application.routes.draw do
   devise_for :users, skip: [:sessions, :registrations]
 
+  #Namespace for API
   namespace :api do
+    # V1 in case we want to test a V2
     namespace :v1 do
 
       root to: "home#index"
