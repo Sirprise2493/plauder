@@ -76,9 +76,16 @@ module Api
       end
 
       def ensure_user_can_create_message!
-        return unless params.dig(:message, :message_type) == "system"
+        requested_type = params.dig(:message, :message_type).to_s
+        content = params.dig(:message, :content).to_s.strip
 
-        render_unprocessable("Systemnachrichten dürfen nicht manuell erstellt werden")
+        if requested_type == "system"
+          return render_unprocessable("Systemnachrichten dürfen nicht manuell erstellt werden")
+        end
+
+        if content.present? && requested_type != "text"
+          return render_unprocessable("Nachrichten mit Textinhalt müssen vom Typ 'text' sein")
+        end
       end
 
       def message_params

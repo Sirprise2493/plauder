@@ -21,7 +21,49 @@ class Message < ApplicationRecord
   validate :sender_must_be_member_of_chat
   validate :content_or_attachment_required
 
+  after_commit :enqueue_moderation_check, on: :create
+
+  def placeholder_attachment_message?
+    content.blank? || content == "Anhang"
+  end
+
+  def normalize_type_from_attachments!
+    return unless message_attachments.exists?
+
+    attachment_types = message_attachments.pluck(:file_type).uniq
+
+    inferred_type =
+      if attachment_types.size == 1
+        case attachment_types.first.to_s
+        when "image" then :image
+        when "video" then :video
+        when "audio" then :audio
+        else :file
+        end
+      else
+        :file
+      end
+
+    next_content = placeholder_attachment_message? ? nil : content
+
+    if self.class.message_types[message_type] != self.class.message_types[inferred_type] || next_content != content
+      update_columns(
+        message_type: self.class.message_types.fetch(inferred_type),
+        content: next_content,
+        updated_at: Time.current
+      )
+    end
+  end
+
   private
+
+  def enqueue_moderation_check
+    return unless text?
+    return if content.blank?
+    return if content == "Anhang"
+
+    ModerateMessageJob.perform_later(id)
+  end
 
   def sender_must_be_member_of_chat
     return if sender_id.blank? || chat_id.blank?

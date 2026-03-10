@@ -124,7 +124,7 @@ module Api
           download_url: attachment.file.attached? ? download_api_v1_message_message_attachment_url(attachment.message, attachment) : nil,
           content_type: attachment.file.attached? ? attachment.file.blob.content_type : nil
         )
-end
+      end
     end
   end
 end

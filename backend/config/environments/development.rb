@@ -34,4 +34,7 @@ Rails.application.configure do
   config.action_mailer.default_url_options = { host: "localhost", port: 3000 }
   Rails.application.routes.default_url_options[:host] = "localhost"
   Rails.application.routes.default_url_options[:port] = 3000
+
+  # Für backend Jobs
+  config.active_job.queue_adapter = :async
 end

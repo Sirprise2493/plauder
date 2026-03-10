@@ -24,6 +24,7 @@ class MessageAttachment < ApplicationRecord
   validate :paired_dimensions
 
   before_validation :populate_file_metadata_from_attachment, if: -> { file.attached? }
+  after_commit :normalize_parent_message_type!, on: :create
 
   private
 
@@ -62,5 +63,9 @@ class MessageAttachment < ApplicationRecord
     if width.present? ^ height.present?
       errors.add(:base, "width und height müssen zusammen gesetzt werden")
     end
+  end
+
+  def normalize_parent_message_type!
+    message.normalize_type_from_attachments!
   end
 end

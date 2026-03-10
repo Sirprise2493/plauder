@@ -98,6 +98,29 @@ function areMessagesEqual(currentMessages: Message[], nextMessages: Message[]) {
   return true;
 }
 
+  function resolveMessageType(
+    hasText: boolean,
+    attachments: PendingAttachment[]
+  ): Message["message_type"] {
+    if (hasText) return "text";
+    if (attachments.length === 0) return "text";
+
+    const uniqueKinds = Array.from(new Set(attachments.map((attachment) => attachment.kind)));
+
+    if (uniqueKinds.length !== 1) return "file";
+
+    switch (uniqueKinds[0]) {
+      case "image":
+        return "image";
+      case "video":
+        return "video";
+      case "audio":
+        return "audio";
+      default:
+        return "file";
+    }
+  }
+
 function getAttachmentKind(file: File): PendingAttachmentKind {
   if (file.type.startsWith("image/")) return "image";
   if (file.type.startsWith("video/")) return "video";
@@ -367,12 +390,14 @@ export default function ChatDetail() {
     setSendError("");
 
     try {
+      const outgoingMessageType = resolveMessageType(hasText, pendingAttachments);
+
       const createdMessage = await apiRequest<Message>(`/chats/${id}/messages`, {
         method: "POST",
         body: JSON.stringify({
           message: {
-            message_type: "text",
-            content: hasText ? trimmedMessage : "Anhang",
+            message_type: outgoingMessageType,
+            content: hasText ? trimmedMessage : null,
           },
         }),
       });
