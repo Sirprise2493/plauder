@@ -47,13 +47,24 @@ type MessageAttachment = {
   content_type: string | null;
 };
 
+type MessageAiCorrection = {
+  id: number;
+  message_id: number;
+  message_corrected_by_ai: string;
+  ai_type: "spelling" | "grammar" | "rewrite" | "translation" | "safety_rephrase";
+  created_at: string;
+  updated_at: string;
+};
+
 type Message = {
   id: number;
   content: string | null;
   message_type: "text" | "image" | "video" | "audio" | "file" | "system";
   created_at: string;
   updated_at: string;
+  draft?: boolean;
   sender: User;
+  message_ai_correction?: MessageAiCorrection | null;
   message_attachments: MessageAttachment[];
 };
 
@@ -76,7 +87,20 @@ function areMessagesEqual(currentMessages: Message[], nextMessages: Message[]) {
     if (
       currentMessage.id !== nextMessage.id ||
       currentMessage.updated_at !== nextMessage.updated_at ||
+      currentMessage.content !== nextMessage.content ||
+      currentMessage.message_type !== nextMessage.message_type ||
       currentMessage.message_attachments.length !== nextMessage.message_attachments.length
+    ) {
+      return false;
+    }
+
+    const currentCorrection = currentMessage.message_ai_correction;
+    const nextCorrection = nextMessage.message_ai_correction;
+
+    if (
+      currentCorrection?.id !== nextCorrection?.id ||
+      currentCorrection?.updated_at !== nextCorrection?.updated_at ||
+      currentCorrection?.message_corrected_by_ai !== nextCorrection?.message_corrected_by_ai
     ) {
       return false;
     }
@@ -97,29 +121,6 @@ function areMessagesEqual(currentMessages: Message[], nextMessages: Message[]) {
 
   return true;
 }
-
-  function resolveMessageType(
-    hasText: boolean,
-    attachments: PendingAttachment[]
-  ): Message["message_type"] {
-    if (hasText) return "text";
-    if (attachments.length === 0) return "text";
-
-    const uniqueKinds = Array.from(new Set(attachments.map((attachment) => attachment.kind)));
-
-    if (uniqueKinds.length !== 1) return "file";
-
-    switch (uniqueKinds[0]) {
-      case "image":
-        return "image";
-      case "video":
-        return "video";
-      case "audio":
-        return "audio";
-      default:
-        return "file";
-    }
-  }
 
 function getAttachmentKind(file: File): PendingAttachmentKind {
   if (file.type.startsWith("image/")) return "image";
@@ -175,7 +176,6 @@ function formatBytes(bytes: number | null) {
   return `${gb.toFixed(1)} GB`;
 }
 
-
 function isImageAttachment(attachment: MessageAttachment) {
   return (
     attachment.file_type === "image" ||
@@ -197,7 +197,28 @@ function isAudioAttachment(attachment: MessageAttachment) {
   );
 }
 
+function resolveMessageType(
+  hasText: boolean,
+  attachments: PendingAttachment[]
+): Message["message_type"] {
+  if (hasText) return "text";
+  if (attachments.length === 0) return "text";
 
+  const uniqueKinds = Array.from(new Set(attachments.map((attachment) => attachment.kind)));
+
+  if (uniqueKinds.length !== 1) return "file";
+
+  switch (uniqueKinds[0]) {
+    case "image":
+      return "image";
+    case "video":
+      return "video";
+    case "audio":
+      return "audio";
+    default:
+      return "file";
+  }
+}
 
 export default function ChatDetail() {
   const { id } = useParams<{ id: string }>();
@@ -210,6 +231,12 @@ export default function ChatDetail() {
   const [isDragActive, setIsDragActive] = useState(false);
   const [activeImageUrl, setActiveImageUrl] = useState<string | null>(null);
   const [activeImageName, setActiveImageName] = useState<string>("");
+
+  const [draftMessageId, setDraftMessageId] = useState<number | null>(null);
+  const [originalDraftText, setOriginalDraftText] = useState<string | null>(null);
+  const [aiCorrectedText, setAiCorrectedText] = useState<string | null>(null);
+  const [isShowingAiCorrection, setIsShowingAiCorrection] = useState(false);
+  const [improvingText, setImprovingText] = useState(false);
 
   const [loadingChat, setLoadingChat] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(true);
@@ -317,17 +344,51 @@ export default function ChatDetail() {
     return otherUser?.username || "Direktchat";
   }, [chat, currentUser?.id]);
 
-  function addFiles(files: FileList | File[]) {
+  async function deleteDraftMessage(messageId: number) {
+    await apiRequest(`/messages/${messageId}`, {
+      method: "DELETE",
+    });
+  }
+
+  async function updateDraftMessage(messageId: number, content: string) {
+    const updated = await apiRequest<Message>(`/messages/${messageId}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        message: {
+          content,
+          draft: true,
+        },
+      }),
+    });
+
+    return updated;
+  }
+
+  async function addFiles(files: FileList | File[]) {
     const nextAttachments = Array.from(files).map(createPendingAttachment);
+
+    if (draftMessageId) {
+      try {
+        await deleteDraftMessage(draftMessageId);
+      } catch {
+        // Draft-Cleanup soll das Hinzufügen von Dateien nicht blockieren
+      }
+    }
 
     setPendingAttachments((prev) => [...prev, ...nextAttachments]);
     setIsDragActive(false);
+
+    setDraftMessageId(null);
+    setOriginalDraftText(null);
+    setAiCorrectedText(null);
+    setIsShowingAiCorrection(false);
+    setNewMessage("");
   }
 
   function handleFileInputChange(event: ChangeEvent<HTMLInputElement>) {
     if (!event.target.files || event.target.files.length === 0) return;
 
-    addFiles(event.target.files);
+    void addFiles(event.target.files);
     event.target.value = "";
   }
 
@@ -348,7 +409,7 @@ export default function ChatDetail() {
     setIsDragActive(false);
 
     if (event.dataTransfer.files.length === 0) return;
-    addFiles(event.dataTransfer.files);
+    void addFiles(event.dataTransfer.files);
   }
 
   function handleDragOver(event: React.DragEvent<HTMLFormElement>) {
@@ -359,6 +420,16 @@ export default function ChatDetail() {
   function handleDragLeave(event: React.DragEvent<HTMLFormElement>) {
     if (event.currentTarget.contains(event.relatedTarget as Node)) return;
     setIsDragActive(false);
+  }
+
+  function handleMessageChange(value: string) {
+    setNewMessage(value);
+
+    if (isShowingAiCorrection || aiCorrectedText || originalDraftText) {
+      setAiCorrectedText(null);
+      setOriginalDraftText(null);
+      setIsShowingAiCorrection(false);
+    }
   }
 
   async function uploadAttachment(messageId: number, attachment: PendingAttachment) {
@@ -373,6 +444,104 @@ export default function ChatDetail() {
       method: "POST",
       body: formData,
     });
+  }
+
+  async function ensureDraftMessage(currentText: string): Promise<Message> {
+    if (!id) {
+      throw new Error("Keine Chat-ID vorhanden");
+    }
+
+    if (draftMessageId) {
+      const updated = await apiRequest<Message>(`/messages/${draftMessageId}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          message: {
+            content: currentText,
+            draft: true,
+          },
+        }),
+      });
+
+      return updated;
+    }
+
+    const created = await apiRequest<Message>(`/chats/${id}/messages`, {
+      method: "POST",
+      body: JSON.stringify({
+        message: {
+          message_type: "text",
+          content: currentText,
+          draft: true,
+        },
+      }),
+    });
+
+    setDraftMessageId(created.id);
+    return created;
+  }
+
+  async function handleAiCorrection() {
+    const trimmed = newMessage.trim();
+
+    if (!trimmed || sendingMessage || improvingText || pendingAttachments.length > 0) {
+      return;
+    }
+
+    if (aiCorrectedText && originalDraftText && draftMessageId) {
+      setImprovingText(true);
+      setSendError("");
+
+      try {
+        if (isShowingAiCorrection) {
+          await updateDraftMessage(draftMessageId, originalDraftText);
+          setNewMessage(originalDraftText);
+          setIsShowingAiCorrection(false);
+        } else {
+          await updateDraftMessage(draftMessageId, aiCorrectedText);
+          setNewMessage(aiCorrectedText);
+          setIsShowingAiCorrection(true);
+        }
+      } catch (err) {
+        setSendError(
+          err instanceof Error ? err.message : "Draft konnte nicht aktualisiert werden"
+        );
+      } finally {
+        setImprovingText(false);
+      }
+
+      return;
+    }
+
+    setImprovingText(true);
+    setSendError("");
+
+    try {
+      const draftMessage = await ensureDraftMessage(trimmed);
+
+      const correction = await apiRequest<MessageAiCorrection>(
+        `/messages/${draftMessage.id}/message_ai_correction`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            message_ai_correction: {},
+          }),
+        }
+      );
+
+      await updateDraftMessage(draftMessage.id, correction.message_corrected_by_ai);
+
+      setDraftMessageId(draftMessage.id);
+      setOriginalDraftText(trimmed);
+      setAiCorrectedText(correction.message_corrected_by_ai);
+      setNewMessage(correction.message_corrected_by_ai);
+      setIsShowingAiCorrection(true);
+    } catch (err) {
+      setSendError(
+        err instanceof Error ? err.message : "AI-Korrektur konnte nicht erstellt werden"
+      );
+    } finally {
+      setImprovingText(false);
+    }
   }
 
   async function handleSendMessage(event?: FormEvent<HTMLFormElement>) {
@@ -392,19 +561,34 @@ export default function ChatDetail() {
     try {
       const outgoingMessageType = resolveMessageType(hasText, pendingAttachments);
 
-      const createdMessage = await apiRequest<Message>(`/chats/${id}/messages`, {
-        method: "POST",
-        body: JSON.stringify({
-          message: {
-            message_type: outgoingMessageType,
-            content: hasText ? trimmedMessage : null,
-          },
-        }),
-      });
+      let targetMessage: Message;
+
+      if (draftMessageId && outgoingMessageType === "text" && pendingAttachments.length === 0) {
+        targetMessage = await apiRequest<Message>(`/messages/${draftMessageId}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            message: {
+              content: trimmedMessage,
+              draft: false,
+            },
+          }),
+        });
+      } else {
+        targetMessage = await apiRequest<Message>(`/chats/${id}/messages`, {
+          method: "POST",
+          body: JSON.stringify({
+            message: {
+              message_type: outgoingMessageType,
+              content: hasText ? trimmedMessage : null,
+              draft: false,
+            },
+          }),
+        });
+      }
 
       if (pendingAttachments.length > 0) {
         for (const attachment of pendingAttachments) {
-          await uploadAttachment(createdMessage.id, attachment);
+          await uploadAttachment(targetMessage.id, attachment);
         }
       }
 
@@ -416,6 +600,10 @@ export default function ChatDetail() {
 
       setPendingAttachments([]);
       setNewMessage("");
+      setDraftMessageId(null);
+      setOriginalDraftText(null);
+      setAiCorrectedText(null);
+      setIsShowingAiCorrection(false);
 
       await loadMessages({ silent: true });
     } catch (err) {
@@ -444,9 +632,6 @@ export default function ChatDetail() {
   async function handleDownloadAttachment(attachment: MessageAttachment) {
     const downloadUrl = attachment.download_url;
 
-    console.log("download attachment", attachment);
-    console.log("download url", downloadUrl);
-
     if (!downloadUrl) {
       setSendError("Kein Download-Link für diese Datei vorhanden.");
       return;
@@ -473,11 +658,10 @@ export default function ChatDetail() {
       document.body.removeChild(link);
 
       window.URL.revokeObjectURL(objectUrl);
-    } catch (error) {
-      console.error("Download fehlgeschlagen:", error);
+    } catch (downloadError) {
       setSendError(
-        error instanceof Error
-          ? error.message
+        downloadError instanceof Error
+          ? downloadError.message
           : "Datei konnte nicht heruntergeladen werden"
       );
     }
@@ -684,7 +868,7 @@ export default function ChatDetail() {
                 type="button"
                 className={s.attachButton}
                 onClick={() => fileInputRef.current?.click()}
-                disabled={sendingMessage}
+                disabled={sendingMessage || improvingText}
               >
                 Datei hinzufügen
               </button>
@@ -729,7 +913,7 @@ export default function ChatDetail() {
                       type="button"
                       className={s.removeAttachmentButton}
                       onClick={() => handleRemovePendingAttachment(attachment.id)}
-                      disabled={sendingMessage}
+                      disabled={sendingMessage || improvingText}
                     >
                       Entfernen
                     </button>
@@ -740,22 +924,48 @@ export default function ChatDetail() {
 
             <textarea
               value={newMessage}
-              onChange={(event) => setNewMessage(event.target.value)}
+              onChange={(event) => handleMessageChange(event.target.value)}
               onKeyDown={handleMessageKeyDown}
               placeholder="Nachricht eingeben oder Datei hier hineinziehen..."
               className={s.messageInput}
               maxLength={10000}
-              disabled={sendingMessage}
+              disabled={sendingMessage || improvingText}
               rows={3}
             />
 
-            <button
-              type="submit"
-              className={s.sendButton}
-              disabled={sendingMessage || (!newMessage.trim() && pendingAttachments.length === 0)}
-            >
-              {sendingMessage ? "Sende..." : "Senden"}
-            </button>
+            <div className={s.composerActions}>
+              <button
+                type="button"
+                className={s.aiCorrectButton }
+                onClick={() => void handleAiCorrection()}
+                disabled={
+                  sendingMessage ||
+                  improvingText ||
+                  pendingAttachments.length > 0 ||
+                  newMessage.trim().length === 0
+                }
+              >
+                {improvingText
+                  ? "AI korrigiert..."
+                  : isShowingAiCorrection
+                    ? "Rückgängig"
+                    : aiCorrectedText
+                      ? "AI-Korrektur anzeigen"
+                      : "AI korrigieren"}
+              </button>
+
+              <button
+                type="submit"
+                className={s.sendButton}
+                disabled={
+                  sendingMessage ||
+                  improvingText ||
+                  (!newMessage.trim() && pendingAttachments.length === 0)
+                }
+              >
+                {sendingMessage ? "Sende..." : "Senden"}
+              </button>
+            </div>
           </form>
 
           <p className={s.inputHint}>
@@ -774,10 +984,7 @@ export default function ChatDetail() {
             setActiveImageName("");
           }}
         >
-          <div
-            className={s.imageModalContent}
-            onClick={(event) => event.stopPropagation()}
-          >
+          <div className={s.imageModalContent} onClick={(event) => event.stopPropagation()}>
             <button
               type="button"
               className={s.closeModalButton}

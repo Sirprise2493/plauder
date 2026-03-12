@@ -12,6 +12,7 @@ module Api
 
       def index
         messages = @chat.messages
+                        .where(draft: false)
                         .includes(:sender, :message_attachments, :message_ai_correction, :message_warnings)
                         .order(created_at: :asc)
 
@@ -89,11 +90,11 @@ module Api
       end
 
       def message_params
-        params.require(:message).permit(:message_type, :content)
+        params.require(:message).permit(:message_type, :content, :draft)
       end
 
       def update_message_params
-        permitted = params.require(:message).permit(:content)
+        permitted = params.require(:message).permit(:content, :draft)
 
         if params.dig(:message, :message_type).present?
           render_unprocessable("Der Nachrichtentyp kann nicht geändert werden")
@@ -109,6 +110,7 @@ module Api
 
       def serialize_message(message)
         message.as_json(
+          only: %i[id content message_type created_at updated_at draft],
           include: {
             sender: { only: %i[id username email status] },
             message_ai_correction: {},

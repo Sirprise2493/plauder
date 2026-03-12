@@ -21,7 +21,7 @@ class Message < ApplicationRecord
   validate :sender_must_be_member_of_chat
   validate :content_or_attachment_required
 
-  after_commit :enqueue_moderation_check, on: :create
+  after_commit :enqueue_moderation_check, on: %i[create update]
 
   def placeholder_attachment_message?
     content.blank? || content == "Anhang"
@@ -59,8 +59,16 @@ class Message < ApplicationRecord
 
   def enqueue_moderation_check
     return unless text?
+    return if draft?
     return if content.blank?
     return if content == "Anhang"
+
+    changed_relevant =
+      previous_changes.key?("content") ||
+      previous_changes.key?("draft") ||
+      previous_changes.key?("message_type")
+
+    return unless changed_relevant
 
     ModerateMessageJob.perform_later(id)
   end
@@ -74,6 +82,7 @@ class Message < ApplicationRecord
   end
 
   def content_or_attachment_required
+    return if draft?
     return unless text? || system?
 
     return if content.present?
