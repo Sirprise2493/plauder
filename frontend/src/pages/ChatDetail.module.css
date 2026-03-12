@@ -368,6 +368,17 @@
   cursor: pointer;
 }
 
+.aiCorrectButton {
+  align-self: flex-end;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 12px;
+  background: #c56313;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 .sendButton:disabled,
 .attachButton:disabled,
 .removeAttachmentButton:disabled {

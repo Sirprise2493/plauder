@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 class ModerateMessageJob < ApplicationJob
   queue_as :default
 
@@ -25,15 +23,26 @@ class ModerateMessageJob < ApplicationJob
     message = Message.includes(:message_warnings).find(message_id)
 
     return unless message.text?
+    return if message.draft?
     return if message.content.blank?
     return if message.content == "Anhang"
 
-    result = OpenAI::ModerationClient.check_text!(message.content)
-    return unless result[:flagged]
-
+    result = OpenAi::ModerationClient.check_text!(message.content)
     flagged_categories = result[:categories].select { |_key, value| value == true }.keys
     mapped_types = flagged_categories.map { |key| CATEGORY_MAP[key] || :toxicity }.uniq
-    mapped_types = [:toxicity] if mapped_types.empty?
+
+    if mapped_types.empty?
+      warning = message.message_warnings.find_or_initialize_by(ai_type: :toxicity)
+      warning.dangerous_message = false
+      warning.response_of_ai = {
+        provider: "openai",
+        flagged_categories: [],
+        category_scores: result[:category_scores],
+        raw: result[:raw]
+      }.to_json
+      warning.save!
+      return
+    end
 
     mapped_types.each do |ai_type|
       warning = message.message_warnings.find_or_initialize_by(ai_type: ai_type)
@@ -46,5 +55,8 @@ class ModerateMessageJob < ApplicationJob
       }.to_json
       warning.save!
     end
+  rescue => e
+    Rails.logger.error("[ModerateMessageJob] message_id=#{message_id} failed: #{e.class} - #{e.message}")
+    raise
   end
 end
