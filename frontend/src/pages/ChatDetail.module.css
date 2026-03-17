@@ -469,3 +469,39 @@
 .downloadButton:hover {
   text-decoration: underline;
 }
+
+.composerActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+
+.detailActions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.detailSecondaryButton,
+.detailPrimaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 16px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.detailSecondaryButton {
+  background: #ffffff;
+  color: #2563eb;
+  border: 1px solid #d1d5db;
+}
+
+.detailPrimaryButton {
+  background: #2563eb;
+  color: #ffffff;
+  border: 1px solid #2563eb;
+}
