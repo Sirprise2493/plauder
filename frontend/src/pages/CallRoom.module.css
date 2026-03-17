@@ -1,0 +1,125 @@
+.wrapper {
+  min-height: 100vh;
+  padding: 24px;
+  background: #f6f7fb;
+  box-sizing: border-box;
+}
+
+.card {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px;
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #2563eb;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.title {
+  margin: 0;
+  font-size: 30px;
+  color: #111827;
+}
+
+.subtitle {
+  margin: 8px 0 0;
+  color: #6b7280;
+}
+
+.section {
+  padding: 16px;
+  border-radius: 14px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+}
+
+.sectionTitle {
+  margin: 0 0 14px;
+  font-size: 18px;
+  color: #111827;
+}
+
+.participantList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.participantItem {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+}
+
+.participantName {
+  margin: 0;
+  font-weight: 700;
+  color: #111827;
+}
+
+.participantMeta {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.secondaryButton,
+.hangupButton {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.secondaryButton {
+  background: #2563eb;
+}
+
+.hangupButton {
+  background: #dc2626;
+}
+
+.secondaryButton:disabled,
+.hangupButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.infoText {
+  margin: 0;
+  color: #374151;
+}
+
+.error {
+  margin: 0;
+  color: #b91c1c;
+}

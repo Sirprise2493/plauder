@@ -1,7 +1,9 @@
 module Api
   module V1
     class CallParticipantsController < BaseController
+      before_action :authenticate_user!
       before_action :set_call
+      before_action :authorize_call_access!
       before_action :set_call_participant, only: %i[show update destroy]
 
       def index
@@ -30,7 +32,12 @@ module Api
 
       def update
         @call_participant.update!(call_participant_params)
-        render json: @call_participant
+
+        render json: @call_participant.as_json(
+          include: {
+            user: { only: %i[id username email status] }
+          }
+        )
       end
 
       def destroy
@@ -46,6 +53,12 @@ module Api
 
       def set_call_participant
         @call_participant = @call.call_participants.find(params[:id])
+      end
+
+      def authorize_call_access!
+        return if @call.chat.users.exists?(id: current_user.id)
+
+        render json: { error: "Nicht erlaubt" }, status: :forbidden
       end
 
       def call_participant_params
