@@ -78,7 +78,6 @@ export default function ChatDetail() {
 
           <ChatDetailActions
             contactsPath="/contacts"
-            callPath={`/chats/${chat.id}/call`}
             classNames={{
               container: s.detailActions,
               secondaryButton: s.detailSecondaryButton,

@@ -32,19 +32,9 @@ module Api
             :password,
             :password_confirmation,
             :username,
-            :status
+            :status,
+            :avatar
           )
-        end
-
-        def user_payload(user)
-          {
-            id: user.id,
-            email: user.email,
-            username: user.username,
-            status: user.status,
-            created_at: user.created_at,
-            updated_at: user.updated_at
-          }
         end
       end
     end

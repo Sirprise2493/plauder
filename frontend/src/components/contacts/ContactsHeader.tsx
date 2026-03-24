@@ -1,22 +1,33 @@
-import type { User } from "../../pages/Contacts";
+import type { AuthUser } from "../../services/authApi";
+import UserAvatar from "../UserAvatar";
 import s from "./ContactsHeader.module.css";
 
 type Props = {
-  user: User | null;
+  user: AuthUser | null;
   onLogout: () => void;
 };
 
 export default function ContactsHeader({ user, onLogout }: Props) {
   return (
     <header className={s.header}>
-      <div>
-        <h1 className={s.title}>Kontakte</h1>
-        <p className={s.userInfo}>
-          Eingeloggt als: <strong>{user?.username}</strong> ({user?.email})
-        </p>
+      <div className={s.userInfo}>
+        <UserAvatar
+          src={user?.avatar_url}
+          alt={user?.username ?? "User"}
+          className={s.avatar}
+        />
+
+        <div>
+          <h1 className={s.title}>Contacts</h1>
+          {user && (
+            <p className={s.subtitle}>
+              Eingeloggt als <strong>{user.username}</strong> ({user.status})
+            </p>
+          )}
+        </div>
       </div>
 
-      <button onClick={onLogout} className={s.logoutButton}>
+      <button type="button" onClick={onLogout} className={s.logoutButton}>
         Logout
       </button>
     </header>

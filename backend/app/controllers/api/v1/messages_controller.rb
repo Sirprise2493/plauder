@@ -112,11 +112,17 @@ module Api
         message.as_json(
           only: %i[id content message_type created_at updated_at draft],
           include: {
-            sender: { only: %i[id username email status] },
             message_ai_correction: {},
             message_warnings: {}
           }
         ).merge(
+          sender: {
+            id: message.sender.id,
+            username: message.sender.username,
+            email: message.sender.email,
+            status: message.sender.status,
+            avatar_url: message.sender.avatar.attached? ? rails_blob_url(message.sender.avatar) : nil
+          },
           message_attachments: message.message_attachments.order(:id).map do |attachment|
             serialize_attachment(attachment)
           end

@@ -13,6 +13,7 @@ type AuthContextValue = {
     password_confirmation: string;
     username: string;
     status?: UserStatus;
+    avatar?: File | null;
   }) => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -50,6 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     password_confirmation: string;
     username: string;
     status?: UserStatus;
+    avatar?: File | null;
   }) => {
     const res = await authApi.signUp(params);
     setUser(res.user);

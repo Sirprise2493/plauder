@@ -25,20 +25,28 @@ module Api
         users = users.where.not(id: related_user_ids)
         users = users.order(Arel.sql("LOWER(username) ASC, LOWER(email) ASC")).limit(10)
 
-        render json: users.as_json(only: %i[id username email status])
+        render json: users.map { |user|
+          {
+            id: user.id,
+            email: user.email,
+            username: user.username,
+            status: user.status,
+            avatar_url: avatar_url_for(user)
+          }
+        }
       end
 
       def show
         if @user == current_user
-          render json: @user.as_json(only: %i[id username email status created_at updated_at])
+          render json: { user: user_payload(@user) }
         else
-          render json: @user.as_json(only: %i[id username status created_at updated_at])
+          render json: { user: public_user_payload(@user) }
         end
       end
 
       def update
         @user.update!(user_params)
-        render json: @user.as_json(only: %i[id username email status created_at updated_at])
+        render json: { user: user_payload(@user.reload) }
       end
 
       private
@@ -54,7 +62,7 @@ module Api
       end
 
       def user_params
-        params.require(:user).permit(:username, :status)
+        params.require(:user).permit(:username, :status, :avatar)
       end
     end
   end

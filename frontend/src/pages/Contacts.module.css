@@ -18,3 +18,19 @@
   border-radius: 10px;
   padding: 12px 14px;
 }
+
+.topActions {
+  display: flex;
+  justify-content: flex-end;
+  margin: 1rem 0;
+}
+
+.profileLink {
+  display: inline-block;
+  background: #2563eb;
+  color: white;
+  text-decoration: none;
+  padding: 0.7rem 1rem;
+  border-radius: 10px;
+  font-weight: 600;
+}

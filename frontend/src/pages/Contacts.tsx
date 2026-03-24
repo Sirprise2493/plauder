@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { apiRequest } from "../services/api";
 import s from "./Contacts.module.css";
@@ -17,6 +17,7 @@ export type User = {
   email: string;
   username: string;
   status: UserStatus;
+  avatar_url: string | null;
 };
 
 export type FriendshipStatus = "pending" | "accepted" | "rejected" | "blocked";
@@ -274,6 +275,12 @@ export default function Contacts() {
   return (
     <div className={s.wrapper}>
       <ContactsHeader user={user} onLogout={() => void signOut()} />
+
+      <div className={s.topActions}>
+        <Link to="/profile" className={s.profileLink}>
+          Mein Profil
+        </Link>
+      </div>
 
       {actionMessage && <p className={s.actionMessage}>{actionMessage}</p>}
 

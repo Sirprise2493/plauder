@@ -1,4 +1,5 @@
 import type { Friendship } from "../../pages/Contacts";
+import UserAvatar from "../UserAvatar";
 import s from "./ReceivedRequestsSection.module.css";
 
 type Props = {
@@ -29,10 +30,18 @@ export default function ReceivedRequestsSection({
         <ul className={s.list}>
           {receivedRequests.map((request) => (
             <li key={request.id} className={s.card}>
-              <div>
-                <h3 className={s.username}>{request.requester.username}</h3>
-                <p className={s.meta}>{request.requester.email}</p>
-                <p className={s.meta}>Status: {request.requester.status}</p>
+              <div className={s.cardContent}>
+                <UserAvatar
+                  src={request.requester.avatar_url}
+                  alt={request.requester.username}
+                  className={s.avatar}
+                />
+
+                <div>
+                  <h3 className={s.username}>{request.requester.username}</h3>
+                  <p className={s.meta}>{request.requester.email}</p>
+                  <p className={s.meta}>Status: {request.requester.status}</p>
+                </div>
               </div>
 
               <div className={s.buttonRow}>
