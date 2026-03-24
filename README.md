@@ -107,32 +107,7 @@ erDiagram
     int updated_by FK
   }
 
-  calls {
-    int id PK
-    int chat_id FK
-    int initiator_id FK
-    int call_type
-    int status
-    datetime started_at
-    datetime ended_at
-    datetime created_at
-    datetime updated_at
-    int created_by FK
-    int updated_by FK
-  }
 
-  call_participants {
-    int id PK
-    int call_id FK
-    int user_id FK
-    int state
-    boolean camera_enabled
-    boolean mic_enabled
-    datetime created_at
-    datetime updated_at
-    int created_by FK
-    int updated_by FK
-  }
 
   users ||--o{ friendships : requester_id
   users ||--o{ friendships : receiver_id
@@ -147,8 +122,4 @@ erDiagram
   messages ||--o{ message_ai_corrections : message_id
   messages ||--o{ message_attachments : message_id
 
-  chats ||--o{ calls : chat_id
-  users ||--o{ calls : initiator_id
 
-  calls ||--o{ call_participants : call_id
-  users ||--o{ call_participants : user_id
