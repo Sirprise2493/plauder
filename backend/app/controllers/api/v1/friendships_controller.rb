@@ -14,12 +14,7 @@ module Api
           .where(friendship_status: :accepted, active: true)
           .order(created_at: :desc)
 
-        render json: friendships.as_json(
-          include: {
-            requester: { only: %i[id username email status] },
-            receiver:  { only: %i[id username email status] }
-          }
-        )
+        render json: friendships.map { |friendship| serialize_friendship(friendship) }
       end
 
       def received_requests
@@ -28,23 +23,13 @@ module Api
           .where(receiver_id: current_user.id, friendship_status: :pending, active: true)
           .order(created_at: :desc)
 
-        render json: friendships.as_json(
-          include: {
-            requester: { only: %i[id username email status] },
-            receiver:  { only: %i[id username email status] }
-          }
-        )
+        render json: friendships.map { |friendship| serialize_friendship(friendship) }
       end
 
       def show
         authorize_friendship!
 
-        render json: @friendship.as_json(
-          include: {
-            requester: { only: %i[id username email status] },
-            receiver:  { only: %i[id username email status] }
-          }
-        )
+        render json: serialize_friendship(@friendship)
       end
 
       def create
@@ -66,12 +51,7 @@ module Api
             active: true
           )
 
-          return render json: existing_friendship.as_json(
-            include: {
-              requester: { only: %i[id username email status] },
-              receiver:  { only: %i[id username email status] }
-            }
-          ), status: :created
+          return render json: serialize_friendship(existing_friendship.reload), status: :created
         end
 
         if reverse_friendship&.rejected?
@@ -82,12 +62,7 @@ module Api
             active: true
           )
 
-          return render json: reverse_friendship.as_json(
-            include: {
-              requester: { only: %i[id username email status] },
-              receiver:  { only: %i[id username email status] }
-            }
-          ), status: :created
+          return render json: serialize_friendship(reverse_friendship.reload), status: :created
         end
 
         friendship = Friendship.new(friendship_params.except(:requester_id, :friendship_status, :active))
@@ -96,30 +71,19 @@ module Api
         friendship.active = true
         friendship.save!
 
-        render json: friendship.as_json(
-          include: {
-            requester: { only: %i[id username email status] },
-            receiver:  { only: %i[id username email status] }
-          }
-        ), status: :created
+        render json: serialize_friendship(friendship.reload), status: :created
       end
 
       def update
         authorize_friendship!
 
-        # Nur der Receiver darf annehmen/ablehnen
         unless @friendship.receiver_id == current_user.id
           return render json: { error: "Nicht erlaubt" }, status: :forbidden
         end
 
         @friendship.update!(update_friendship_params)
 
-        render json: @friendship.as_json(
-          include: {
-            requester: { only: %i[id username email status] },
-            receiver:  { only: %i[id username email status] }
-          }
-        )
+        render json: serialize_friendship(@friendship.reload)
       end
 
       def destroy
@@ -151,6 +115,30 @@ module Api
 
       def update_friendship_params
         params.require(:friendship).permit(:friendship_status)
+      end
+
+      def serialize_friendship(friendship)
+        {
+          id: friendship.id,
+          requester_id: friendship.requester_id,
+          receiver_id: friendship.receiver_id,
+          friendship_status: friendship.friendship_status,
+          active: friendship.active,
+          created_at: friendship.created_at,
+          updated_at: friendship.updated_at,
+          requester: serialize_user(friendship.requester),
+          receiver: serialize_user(friendship.receiver)
+        }
+      end
+
+      def serialize_user(user)
+        {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          status: user.status,
+          avatar_url: avatar_url_for(user)
+        }
       end
     end
   end

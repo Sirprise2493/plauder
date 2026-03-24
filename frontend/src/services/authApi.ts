@@ -7,6 +7,7 @@ export type User = {
   email: string;
   username: string;
   status: UserStatus;
+  avatar_url: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -34,10 +35,26 @@ export async function signUp(params: {
   password_confirmation: string;
   username: string;
   status?: UserStatus;
+  avatar?: File | null;
 }): Promise<AuthSuccess> {
+  const formData = new FormData();
+
+  formData.append("user[email]", params.email);
+  formData.append("user[password]", params.password);
+  formData.append("user[password_confirmation]", params.password_confirmation);
+  formData.append("user[username]", params.username);
+
+  if (params.status) {
+    formData.append("user[status]", params.status);
+  }
+
+  if (params.avatar) {
+    formData.append("user[avatar]", params.avatar);
+  }
+
   return apiRequest<AuthSuccess>("/auth/sign_up", {
     method: "POST",
-    body: JSON.stringify({ user: params }),
+    body: formData,
   });
 }
 

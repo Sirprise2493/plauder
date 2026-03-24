@@ -5,14 +5,7 @@ module Api
 
       def show
         render json: {
-          user: {
-            id: current_user.id,
-            email: current_user.email,
-            username: current_user.username,
-            status: current_user.status,
-            created_at: current_user.created_at,
-            updated_at: current_user.updated_at
-          }
+          user: user_payload(current_user)
         }
       end
     end

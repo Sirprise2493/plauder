@@ -86,12 +86,14 @@ module Api
       end
 
       def serialize_chat(chat)
-        chat.as_json(
-          only: %i[id chat_type title created_at updated_at],
-          include: {
-            users: { only: %i[id username email status] }
-          }
-        )
+        {
+          id: chat.id,
+          chat_type: chat.chat_type,
+          title: chat.title,
+          created_at: chat.created_at,
+          updated_at: chat.updated_at,
+          users: chat.users.map { |user| serialize_user(user) }
+        }
       end
 
       def serialize_recent_chat(chat)
@@ -103,13 +105,30 @@ module Api
           chat_type: chat.chat_type,
           title: chat.title,
           display_name: chat.direct? ? other_user&.username : chat.title,
-          last_message: last_message&.as_json(
-            only: %i[id content message_type created_at],
-            include: {
-              sender: { only: %i[id username email status] }
-            }
-          ),
-          users: chat.users.as_json(only: %i[id username email status])
+          last_message: serialize_last_message(last_message),
+          users: chat.users.map { |user| serialize_user(user) }
+        }
+      end
+
+      def serialize_last_message(message)
+        return nil unless message
+
+        {
+          id: message.id,
+          content: message.content,
+          message_type: message.message_type,
+          created_at: message.created_at,
+          sender: serialize_user(message.sender)
+        }
+      end
+
+      def serialize_user(user)
+        {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          status: user.status,
+          avatar_url: avatar_url_for(user)
         }
       end
 

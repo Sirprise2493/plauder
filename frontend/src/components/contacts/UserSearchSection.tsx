@@ -1,4 +1,5 @@
 import type { User } from "../../pages/Contacts";
+import UserAvatar from "../UserAvatar";
 import s from "./UserSearchSection.module.css";
 
 type Props = {
@@ -41,10 +42,18 @@ export default function UserSearchSection({
         <ul className={s.list}>
           {searchResults.map((result) => (
             <li key={result.id} className={s.card}>
-              <div>
-                <h3 className={s.username}>{result.username}</h3>
-                <p className={s.meta}>{result.email}</p>
-                <p className={s.meta}>Status: {result.status}</p>
+              <div className={s.cardContent}>
+                <UserAvatar
+                  src={result.avatar_url}
+                  alt={result.username}
+                  className={s.avatar}
+                />
+
+                <div>
+                  <h3 className={s.username}>{result.username}</h3>
+                  <p className={s.meta}>{result.email}</p>
+                  <p className={s.meta}>Status: {result.status}</p>
+                </div>
               </div>
 
               <button

@@ -7,6 +7,8 @@ class User < ApplicationRecord
     online: 1,
   }, default: :offline
 
+  has_one_attached :avatar
+
   has_many :chat_memberships, dependent: :destroy
   has_many :chats, through: :chat_memberships
 
@@ -21,11 +23,25 @@ class User < ApplicationRecord
   validates :username, presence: true, length: { minimum: 3, maximum: 30 }, uniqueness: { case_sensitive: false }
   validates :status, presence: true
 
+  validate :acceptable_avatar
+
   before_validation :normalize_username
 
   private
 
   def normalize_username
     self.username = username.to_s.strip
+  end
+
+  def acceptable_avatar
+    return unless avatar.attached?
+
+    unless avatar.blob.content_type.in?(%w[image/jpeg image/png image/webp image/jpg])
+      errors.add(:avatar, "muss ein JPG, PNG oder WEBP sein")
+    end
+
+    if avatar.blob.byte_size > 5.megabytes
+      errors.add(:avatar, "ist zu groß (max. 5MB)")
+    end
   end
 end

@@ -1,8 +1,8 @@
-// frontend/src/pages/HomeAuth.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import type { UserStatus } from "../services/authApi";
+import UserAvatar from "../components/UserAvatar";
 import s from "./HomeAuth.module.css";
 
 type AuthMode = "sign_in" | "sign_up";
@@ -22,6 +22,9 @@ export default function HomeAuth() {
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
   const [status, setStatus] = useState<UserStatus>("offline");
 
+  const [avatar, setAvatar] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+
   const canSubmit = useMemo(() => {
     if (!email.trim() || !password) return false;
     if (mode === "sign_up") return !!username.trim() && !!passwordConfirmation;
@@ -31,6 +34,18 @@ export default function HomeAuth() {
   useEffect(() => {
     if (!loading && user) navigate("/contacts", { replace: true });
   }, [loading, user, navigate]);
+
+  useEffect(() => {
+    if (!avatar) {
+      setAvatarPreview(null);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(avatar);
+    setAvatarPreview(objectUrl);
+
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [avatar]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -50,12 +65,15 @@ export default function HomeAuth() {
           password_confirmation: passwordConfirmation,
           username: username.trim(),
           status,
+          avatar,
         });
         setSuccessMessage("Registrierung erfolgreich");
       }
 
       setPassword("");
       setPasswordConfirmation("");
+      setAvatar(null);
+      setAvatarPreview(null);
 
       navigate("/contacts", { replace: true });
     } catch (err) {
@@ -100,6 +118,24 @@ export default function HomeAuth() {
         <form onSubmit={handleSubmit} className={s.form}>
           {mode === "sign_up" && (
             <>
+              <div className={s.avatarSection}>
+                <UserAvatar
+                  src={avatarPreview}
+                  alt="Avatar Vorschau"
+                  className={s.avatarPreview}
+                />
+              </div>
+
+              <label className={s.label}>
+                Profilbild
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg,image/webp"
+                  onChange={(e) => setAvatar(e.target.files?.[0] ?? null)}
+                  className={s.input}
+                />
+              </label>
+
               <label className={s.label}>
                 Username
                 <input

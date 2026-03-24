@@ -1,4 +1,5 @@
 import type { User } from "../../pages/Contacts";
+import UserAvatar from "../UserAvatar";
 import s from "./FriendsSection.module.css";
 
 type Props = {
@@ -33,10 +34,18 @@ export default function FriendsSection({
               className={s.cardClickable}
               onClick={() => onOpenFriendChat(friend.id)}
             >
-              <div>
-                <h3 className={s.username}>{friend.username}</h3>
-                <p className={s.meta}>{friend.email}</p>
-                <p className={s.meta}>Status: {friend.status}</p>
+              <div className={s.cardContent}>
+                <UserAvatar
+                  src={friend.avatar_url}
+                  alt={friend.username}
+                  className={s.avatar}
+                />
+
+                <div>
+                  <h3 className={s.username}>{friend.username}</h3>
+                  <p className={s.meta}>{friend.email}</p>
+                  <p className={s.meta}>Status: {friend.status}</p>
+                </div>
               </div>
             </li>
           ))}

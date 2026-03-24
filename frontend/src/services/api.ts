@@ -17,16 +17,20 @@ export async function apiRequest<T>(
   const csrfToken = getCsrfToken();
 
   const headers: HeadersInit = {
+    Accept: "application/json",
     ...(options.headers || {}),
   };
 
   // JSON-Body => Content-Type setzen
   if (options.body && !(options.body instanceof FormData)) {
-    headers["Content-Type"] = headers["Content-Type"] ?? "application/json";
+    headers["Content-Type"] =
+      (headers as Record<string, string>)["Content-Type"] ?? "application/json";
   }
 
   // CSRF nur setzen, wenn vorhanden
-  if (csrfToken) headers["X-CSRF-Token"] = csrfToken;
+  if (csrfToken) {
+    headers["X-CSRF-Token"] = csrfToken;
+  }
 
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
