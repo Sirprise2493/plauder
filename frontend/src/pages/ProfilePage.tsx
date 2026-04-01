@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { apiRequest } from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 import type { AuthUser, UserStatus } from "../services/authApi";
@@ -15,6 +15,7 @@ type UpdateUserResponse = {
 };
 
 export default function ProfilePage() {
+  const navigate = useNavigate();
   const { user, refreshMe } = useAuth();
 
   const [username, setUsername] = useState("");
@@ -93,6 +94,7 @@ export default function ProfilePage() {
       setSuccessMessage("Profil erfolgreich aktualisiert.");
 
       await refreshMe();
+      navigate("/contacts");
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : "Profil konnte nicht gespeichert werden");
     } finally {

@@ -1,21 +1,24 @@
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import s from "./ChatDetail.module.css";
 import ImageModal from "./chat-detail/components/ImageModal";
 import ChatHeader from "./chat-detail/components/ChatHeader";
-import ChatDetailActions from "./chat-detail/components/ChatDetailActions.tsx";
+import ChatDetailActions from "./chat-detail/components/ChatDetailActions";
 import ParticipantsCard from "./chat-detail/components/ParticipantsCard";
 import MessageList from "./chat-detail/components/MessageList";
 import MessageComposer from "./chat-detail/components/MessageComposer";
 import { useChatDetail } from "./chat-detail/hooks/useChatDetail";
 
 export default function ChatDetail() {
+  const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { user: currentUser } = useAuth();
 
   const {
     chat,
     messages,
+    availableFriends,
+    memberSearch,
     newMessage,
     pendingAttachments,
     isDragActive,
@@ -26,14 +29,21 @@ export default function ChatDetail() {
     improvingText,
     loadingChat,
     loadingMessages,
+    loadingFriends,
     sendingMessage,
+    addingMemberId,
+    leavingChat,
     error,
     sendError,
+    membershipMessage,
+    membershipError,
     messagesEndRef,
     fileInputRef,
     chatDisplayTitle,
+    chatAvatarUrl,
     setActiveImageUrl,
     setActiveImageName,
+    setMemberSearch,
     handleFileInputChange,
     handleRemovePendingAttachment,
     handleDrop,
@@ -44,6 +54,8 @@ export default function ChatDetail() {
     handleSendMessage,
     handleMessageKeyDown,
     handleDownloadAttachment,
+    handleAddMember,
+    handleLeaveChat,
   } = useChatDetail({
     chatId: id,
     currentUserId: currentUser?.id,
@@ -69,8 +81,11 @@ export default function ChatDetail() {
                 ? `${chat.users.length} Mitglieder`
                 : "Direktchat"
             }
+            avatarUrl={chatAvatarUrl}
             classNames={{
               header: s.chatHeader,
+              avatar: s.chatAvatar,
+              textWrap: s.chatHeaderText,
               title: s.chatTitle,
               subtitle: s.chatSubtitle,
             }}
@@ -78,10 +93,35 @@ export default function ChatDetail() {
 
           <ChatDetailActions
             contactsPath="/contacts"
+            isGroupChat={chat.chat_type === "group_chat"}
+            availableFriends={availableFriends}
+            memberSearch={memberSearch}
+            loadingFriends={loadingFriends}
+            addingMemberId={addingMemberId}
+            leavingChat={leavingChat}
+            membershipMessage={membershipMessage}
+            membershipError={membershipError}
+            onMemberSearchChange={setMemberSearch}
+            onAddMember={handleAddMember}
+            onLeaveChat={async () => {
+              const success = await handleLeaveChat();
+              if (success) {
+                navigate("/contacts");
+              }
+            }}
             classNames={{
               container: s.detailActions,
               secondaryButton: s.detailSecondaryButton,
-              primaryButton: s.detailPrimaryButton,
+              dangerButton: s.detailDangerButton,
+              addMembersCard: s.addMembersCard,
+              searchInput: s.membersSearchInput,
+              friendsList: s.addableFriendsList,
+              friendItem: s.addableFriendItem,
+              friendLeft: s.addableFriendLeft,
+              friendAvatar: s.addableFriendAvatar,
+              friendName: s.addableFriendName,
+              inlineInfo: s.inlineInfo,
+              inlineError: s.inlineError,
             }}
           />
 
@@ -94,6 +134,8 @@ export default function ChatDetail() {
               list: s.participantsList,
               item: s.participantItem,
               left: s.participantLeft,
+              avatar: s.participantAvatar,
+              identity: s.participantIdentity,
               name: s.participantName,
               email: s.participantEmail,
               status: s.participantStatus,

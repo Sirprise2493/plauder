@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { apiRequest } from "../services/api";
+import UserAvatar from "../components/UserAvatar";
 import s from "./Contacts.module.css";
 
 import ContactsHeader from "../components/contacts/ContactsHeader";
@@ -38,6 +39,7 @@ export type RecentChat = {
   id: number;
   chat_type: "direct" | "group_chat";
   title: string | null;
+  avatar_url: string | null;
   display_name: string | null;
   last_message: {
     id: number;
@@ -53,6 +55,7 @@ type ChatSummary = {
   id: number;
   chat_type: "direct" | "group_chat";
   title: string | null;
+  avatar_url: string | null;
   created_at: string;
   updated_at: string;
   users: User[];
@@ -78,6 +81,14 @@ export default function Contacts() {
   const [requestsError, setRequestsError] = useState("");
   const [searchError, setSearchError] = useState("");
   const [actionMessage, setActionMessage] = useState("");
+
+  const [showCreateGroupChat, setShowCreateGroupChat] = useState(false);
+  const [groupTitle, setGroupTitle] = useState("");
+  const [groupFriendSearch, setGroupFriendSearch] = useState("");
+  const [selectedFriendIds, setSelectedFriendIds] = useState<number[]>([]);
+  const [groupAvatar, setGroupAvatar] = useState<File | null>(null);
+  const [groupAvatarPreviewUrl, setGroupAvatarPreviewUrl] = useState<string | null>(null);
+  const [creatingGroupChat, setCreatingGroupChat] = useState(false);
 
   useEffect(() => {
     async function loadFriends() {
@@ -193,11 +204,50 @@ export default function Contacts() {
     return () => window.clearTimeout(timeout);
   }, [searchQuery]);
 
+  useEffect(() => {
+    if (!groupAvatar) {
+      setGroupAvatarPreviewUrl(null);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(groupAvatar);
+    setGroupAvatarPreviewUrl(objectUrl);
+
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [groupAvatar]);
+
+  const filteredFriends = useMemo(() => {
+    const query = groupFriendSearch.trim().toLowerCase();
+
+    if (!query) return friends;
+
+    return friends.filter((friend) =>
+      friend.username.toLowerCase().includes(query)
+    );
+  }, [friends, groupFriendSearch]);
+
   function addFriendIfMissing(friendToAdd: User) {
     setFriends((prev) => {
       if (prev.some((friend) => friend.id === friendToAdd.id)) return prev;
       return [friendToAdd, ...prev];
     });
+  }
+
+  function toggleFriendSelection(friendId: number) {
+    setSelectedFriendIds((prev) =>
+      prev.includes(friendId)
+        ? prev.filter((id) => id !== friendId)
+        : [...prev, friendId]
+    );
+  }
+
+  function resetGroupChatForm() {
+    setGroupTitle("");
+    setGroupFriendSearch("");
+    setSelectedFriendIds([]);
+    setGroupAvatar(null);
+    setGroupAvatarPreviewUrl(null);
+    setShowCreateGroupChat(false);
   }
 
   async function handleSendFriendRequest(receiverId: number) {
@@ -272,17 +322,196 @@ export default function Contacts() {
     }
   }
 
+  async function handleCreateGroupChat() {
+    setActionMessage("");
+
+    const trimmedTitle = groupTitle.trim();
+
+    if (!trimmedTitle) {
+      setActionMessage("Bitte gib einen Gruppennamen ein.");
+      return;
+    }
+
+    if (selectedFriendIds.length === 0) {
+      setActionMessage("Bitte wähle mindestens einen Freund aus.");
+      return;
+    }
+
+    setCreatingGroupChat(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("chat[chat_type]", "group_chat");
+      formData.append("chat[title]", trimmedTitle);
+
+      selectedFriendIds.forEach((friendId) => {
+        formData.append("chat[user_ids][]", String(friendId));
+      });
+
+      if (groupAvatar) {
+        formData.append("chat[avatar]", groupAvatar);
+      }
+
+      const chat = await apiRequest<ChatSummary>("/chats", {
+        method: "POST",
+        body: formData,
+      });
+
+      setActionMessage("Gruppenchat wurde erstellt.");
+      resetGroupChatForm();
+
+      setRecentChats((prev) => [
+        {
+          id: chat.id,
+          chat_type: chat.chat_type,
+          title: chat.title,
+          avatar_url: chat.avatar_url,
+          display_name: chat.title,
+          last_message: null,
+          users: chat.users,
+        },
+        ...prev.filter((existingChat) => existingChat.id !== chat.id),
+      ]);
+
+      navigate(`/chats/${chat.id}`);
+    } catch (err) {
+      setActionMessage(
+        err instanceof Error ? err.message : "Gruppenchat konnte nicht erstellt werden"
+      );
+    } finally {
+      setCreatingGroupChat(false);
+    }
+  }
+
   return (
     <div className={s.wrapper}>
       <ContactsHeader user={user} onLogout={() => void signOut()} />
 
       <div className={s.topActions}>
+        <button
+          type="button"
+          className={s.groupChatButton}
+          onClick={() => {
+            setActionMessage("");
+            setShowCreateGroupChat((prev) => !prev);
+          }}
+        >
+          {showCreateGroupChat ? "Abbrechen" : "Gruppenchat erstellen"}
+        </button>
+
         <Link to="/profile" className={s.profileLink}>
           Mein Profil
         </Link>
       </div>
 
       {actionMessage && <p className={s.actionMessage}>{actionMessage}</p>}
+
+      {showCreateGroupChat && (
+        <section className={s.groupChatForm}>
+          <h2>Neuen Gruppenchat erstellen</h2>
+
+          <div className={s.groupAvatarBox}>
+            <UserAvatar
+              src={groupAvatarPreviewUrl}
+              alt="Gruppenavatar Vorschau"
+              className={s.groupAvatarPreview}
+            />
+          </div>
+
+          <div className={s.formGroup}>
+            <label htmlFor="groupAvatar">Gruppenavatar</label>
+            <input
+              id="groupAvatar"
+              type="file"
+              accept="image/png,image/jpeg,image/jpg,image/webp"
+              onChange={(e) => setGroupAvatar(e.target.files?.[0] ?? null)}
+            />
+          </div>
+
+          <div className={s.formGroup}>
+            <label htmlFor="groupTitle">Name des Gruppenchats</label>
+            <input
+              id="groupTitle"
+              type="text"
+              value={groupTitle}
+              onChange={(e) => setGroupTitle(e.target.value)}
+              placeholder="z. B. Familie, Uni, Projektteam"
+              maxLength={100}
+            />
+          </div>
+
+          <div className={s.formGroup}>
+            <label htmlFor="groupFriendSearch">Freunde suchen</label>
+            <input
+              id="groupFriendSearch"
+              type="text"
+              value={groupFriendSearch}
+              onChange={(e) => setGroupFriendSearch(e.target.value)}
+              placeholder="Nach Username suchen"
+            />
+          </div>
+
+          <div className={s.selectedInfo}>
+            Ausgewählte Freunde: {selectedFriendIds.length}
+          </div>
+
+          <div className={s.friendSelectionList}>
+            {loadingFriends ? (
+              <p>Freunde werden geladen...</p>
+            ) : friendsError ? (
+              <p>{friendsError}</p>
+            ) : filteredFriends.length === 0 ? (
+              <p>Keine passenden Freunde gefunden.</p>
+            ) : (
+              filteredFriends.map((friend) => {
+                const isSelected = selectedFriendIds.includes(friend.id);
+
+                return (
+                  <button
+                    key={friend.id}
+                    type="button"
+                    className={`${s.friendSelectItem} ${isSelected ? s.friendSelected : ""}`}
+                    onClick={() => toggleFriendSelection(friend.id)}
+                  >
+                    <span className={s.friendSelectLeft}>
+                      <UserAvatar
+                        src={friend.avatar_url}
+                        alt={friend.username}
+                        className={s.friendSelectAvatar}
+                      />
+                      <span className={s.friendSelectName}>{friend.username}</span>
+                    </span>
+
+                    <span className={s.friendSelectAction}>
+                      {isSelected ? "Ausgewählt" : "Hinzufügen"}
+                    </span>
+                  </button>
+                );
+              })
+            )}
+          </div>
+
+          <div className={s.groupChatActions}>
+            <button
+              type="button"
+              className={s.cancelGroupChatButton}
+              onClick={resetGroupChatForm}
+              disabled={creatingGroupChat}
+            >
+              Abbrechen
+            </button>
+
+            <button
+              type="button"
+              className={s.createGroupChatSubmit}
+              onClick={handleCreateGroupChat}
+              disabled={creatingGroupChat}
+            >
+              {creatingGroupChat ? "Erstelle..." : "Gruppenchat erstellen"}
+            </button>
+          </div>
+        </section>
+      )}
 
       <div className={s.sections}>
         <UserSearchSection
@@ -306,6 +535,7 @@ export default function Contacts() {
           loadingChats={loadingChats}
           chatsError={chatsError}
           onOpenChat={handleOpenRecentChat}
+          currentUserId={user?.id}
         />
 
         <FriendsSection

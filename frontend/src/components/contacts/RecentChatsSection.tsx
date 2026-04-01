@@ -1,75 +1,74 @@
-import type { RecentChat, User } from "../../pages/Contacts";
 import UserAvatar from "../UserAvatar";
 import s from "./RecentChatsSection.module.css";
+import type { RecentChat } from "../../pages/Contacts";
 
 type Props = {
   recentChats: RecentChat[];
   loadingChats: boolean;
   chatsError: string;
   onOpenChat: (chatId: number) => void;
+  currentUserId?: number;
 };
-
-function getOtherUser(chat: RecentChat): User | null {
-  if (chat.chat_type !== "direct") return null;
-  return chat.users[0] ?? null;
-}
 
 export default function RecentChatsSection({
   recentChats,
   loadingChats,
   chatsError,
   onOpenChat,
+  currentUserId,
 }: Props) {
+  function resolveAvatar(chat: RecentChat) {
+    if (chat.chat_type === "group_chat") {
+      return chat.avatar_url;
+    }
+
+    return chat.users.find((user) => user.id !== currentUserId)?.avatar_url ?? null;
+  }
+
   return (
-    <section className={s.section}>
-      <h2 className={s.sectionTitle}>Letzte Chats</h2>
+    <section className={s.card}>
+      <h2 className={s.title}>Letzte Chats</h2>
 
-      {loadingChats && <p className={s.message}>Lade letzte Chats...</p>}
-      {chatsError && <p className={s.error}>{chatsError}</p>}
+      {loadingChats ? (
+        <p className={s.info}>Chats werden geladen...</p>
+      ) : chatsError ? (
+        <p className={s.error}>{chatsError}</p>
+      ) : recentChats.length === 0 ? (
+        <p className={s.info}>Noch keine Chats vorhanden.</p>
+      ) : (
+        <div className={s.list}>
+          {recentChats.map((chat) => (
+            <button
+              key={chat.id}
+              type="button"
+              className={s.chatCard}
+              onClick={() => onOpenChat(chat.id)}
+            >
+              <UserAvatar
+                src={resolveAvatar(chat)}
+                alt={chat.display_name || chat.title || "Chat"}
+                className={s.avatar}
+              />
 
-      {!loadingChats && !chatsError && recentChats.length === 0 && (
-        <p className={s.message}>Noch keine Chats vorhanden.</p>
-      )}
-
-      {!loadingChats && !chatsError && recentChats.length > 0 && (
-        <ul className={s.list}>
-          {recentChats.map((chat) => {
-            const otherUser = getOtherUser(chat);
-
-            return (
-              <li
-                key={chat.id}
-                className={s.cardClickable}
-                onClick={() => onOpenChat(chat.id)}
-              >
-                <div className={s.cardContent}>
-                  <UserAvatar
-                    src={otherUser?.avatar_url ?? null}
-                    alt={chat.display_name ?? "Chat"}
-                    className={s.avatar}
-                  />
-
-                  <div>
-                    <h3 className={s.username}>{chat.display_name ?? "Unbenannter Chat"}</h3>
-                    {chat.last_message ? (
-                      <>
-                        <p className={s.meta}>
-                          <strong>{chat.last_message.sender.username}:</strong>{" "}
-                          {chat.last_message.content ?? "Keine Nachricht"}
-                        </p>
-                        <p className={s.meta}>
-                          {new Date(chat.last_message.created_at).toLocaleString()}
-                        </p>
-                      </>
-                    ) : (
-                      <p className={s.meta}>Keine Nachrichten vorhanden.</p>
-                    )}
-                  </div>
+              <div className={s.content}>
+                <div className={s.headerRow}>
+                  <span className={s.name}>
+                    {chat.display_name || chat.title || "Chat"}
+                  </span>
+                  <span className={s.type}>
+                    {chat.chat_type === "group_chat" ? "Gruppe" : "Direkt"}
+                  </span>
                 </div>
-              </li>
-            );
-          })}
-        </ul>
+
+                <p className={s.preview}>
+                  {chat.last_message
+                    ? `${chat.last_message.sender.username}: ${chat.last_message.content || "Anhang"}`
+                    : "Noch keine Nachrichten"}
+                </p>
+              </div>
+            </button>
+          ))}
+        </div>
       )}
     </section>
   );

@@ -5,15 +5,26 @@ export type User = {
   username: string;
   email: string;
   status: UserStatus;
+  avatar_url: string | null;
 };
 
 export type Chat = {
   id: number;
   chat_type: "direct" | "group_chat";
   title: string | null;
+  avatar_url: string | null;
   created_at: string;
   updated_at: string;
   users: User[];
+};
+
+export type ChatMembership = {
+  id: number;
+  chat_id: number;
+  user_id: number;
+  created_at: string;
+  updated_at: string;
+  user: User;
 };
 
 export type MessageAttachment = {
@@ -52,7 +63,6 @@ export type Message = {
   message_ai_correction?: MessageAiCorrection | null;
   message_attachments: MessageAttachment[];
 };
-
 export type PendingAttachmentKind = "image" | "video" | "audio" | "document" | "other";
 
 export type PendingAttachment = {
