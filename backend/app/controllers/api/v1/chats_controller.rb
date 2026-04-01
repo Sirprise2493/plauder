@@ -72,8 +72,10 @@ module Api
           return render json: { error: "Nicht erlaubt" }, status: :forbidden
         end
 
-        @chat.update!(chat_params.except(:user_ids))
-        render json: serialize_chat(@chat)
+        @chat.update!(chat_params.except(:user_ids, :avatar))
+        attach_avatar_if_present(@chat)
+
+        render json: serialize_chat(@chat.reload)
       end
 
       def destroy
@@ -92,7 +94,7 @@ module Api
       end
 
       def chat_params
-        params.require(:chat).permit(:chat_type, :title, user_ids: [])
+        params.require(:chat).permit(:chat_type, :title, :avatar, user_ids: [])
       end
 
       def create_group_chat!
@@ -126,6 +128,8 @@ module Api
             title: chat_params[:title]
           )
 
+          attach_avatar_if_present(chat)
+
           ChatMembership.create!(chat: chat, user: current_user)
 
           selected_user_ids.each do |user_id|
@@ -136,11 +140,18 @@ module Api
         render json: serialize_chat(chat.reload), status: :created
       end
 
+      def attach_avatar_if_present(chat)
+        return unless chat_params[:avatar].present?
+
+        chat.avatar.attach(chat_params[:avatar])
+      end
+
       def serialize_chat(chat)
         {
           id: chat.id,
           chat_type: chat.chat_type,
           title: chat.title,
+          avatar_url: avatar_url_for_chat(chat),
           created_at: chat.created_at,
           updated_at: chat.updated_at,
           users: chat.users.map { |user| serialize_user(user) }
@@ -155,6 +166,7 @@ module Api
           id: chat.id,
           chat_type: chat.chat_type,
           title: chat.title,
+          avatar_url: avatar_url_for_chat(chat),
           display_name: chat.direct? ? other_user&.username : chat.title,
           last_message: serialize_last_message(last_message),
           users: chat.users.map { |user| serialize_user(user) }
@@ -181,6 +193,10 @@ module Api
           status: user.status,
           avatar_url: avatar_url_for(user)
         }
+      end
+
+      def avatar_url_for_chat(chat)
+        chat.avatar.attached? ? rails_blob_url(chat.avatar) : nil
       end
 
       def find_direct_chat_between(user_a, user_b)

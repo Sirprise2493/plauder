@@ -1,3 +1,4 @@
+import UserAvatar from "../../../components/UserAvatar";
 import type { User } from "../types";
 
 type Props = {
@@ -9,6 +10,8 @@ type Props = {
     list: string;
     item: string;
     left: string;
+    avatar: string;
+    identity: string;
     name: string;
     email: string;
     status: string;
@@ -33,10 +36,18 @@ export default function ParticipantsCard({
           return (
             <li key={member.id} className={classNames.item}>
               <div className={classNames.left}>
-                <span className={classNames.name}>
-                  {member.username} {isMe ? "(du)" : ""}
-                </span>
-                <span className={classNames.email}>{member.email}</span>
+                <UserAvatar
+                  src={member.avatar_url}
+                  alt={member.username}
+                  className={classNames.avatar}
+                />
+
+                <div className={classNames.identity}>
+                  <span className={classNames.name}>
+                    {member.username} {isMe ? "(du)" : ""}
+                  </span>
+                  <span className={classNames.email}>{member.email}</span>
+                </div>
               </div>
 
               <span

@@ -26,11 +26,23 @@
 .chatHeader {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 16px;
   padding: 20px 24px;
   border-radius: 16px;
   background: #ffffff;
   border: 1px solid #e5e7eb;
+}
+
+.chatAvatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: 0 0 auto;
+}
+
+.chatHeaderText {
+  min-width: 0;
 }
 
 .chatTitle {
@@ -75,6 +87,21 @@
 }
 
 .participantLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.participantAvatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: 0 0 auto;
+}
+
+.participantIdentity {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -476,7 +503,6 @@
   gap: 10px;
 }
 
-
 .detailActions {
   display: flex;
   gap: 12px;
@@ -484,7 +510,7 @@
 }
 
 .detailSecondaryButton,
-.detailPrimaryButton {
+.detailDangerButton {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -492,16 +518,85 @@
   border-radius: 12px;
   text-decoration: none;
   font-weight: 600;
+  border: 1px solid #d1d5db;
 }
 
 .detailSecondaryButton {
   background: #ffffff;
   color: #2563eb;
-  border: 1px solid #d1d5db;
 }
 
-.detailPrimaryButton {
-  background: #2563eb;
-  color: #ffffff;
-  border: 1px solid #2563eb;
+.detailDangerButton {
+  background: #fee2e2;
+  color: #991b1b;
+  cursor: pointer;
+}
+
+.addMembersCard {
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+}
+
+.addMembersCard h2 {
+  margin: 0 0 12px;
+  font-size: 16px;
+}
+
+.membersSearchInput {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font: inherit;
+  box-sizing: border-box;
+  margin-bottom: 12px;
+}
+
+.addableFriendsList {
+  display: grid;
+  gap: 10px;
+}
+
+.addableFriendItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.addableFriendLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.addableFriendAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.addableFriendName {
+  font-weight: 600;
+  color: #111827;
+}
+
+.inlineInfo {
+  margin: 0 0 10px;
+  color: #4b5563;
+}
+
+.inlineError {
+  margin: 0 0 10px;
+  color: #b91c1c;
 }

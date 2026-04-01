@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { apiRequest } from "../services/api";
+import UserAvatar from "../components/UserAvatar";
 import s from "./Contacts.module.css";
 
 import ContactsHeader from "../components/contacts/ContactsHeader";
@@ -38,6 +39,7 @@ export type RecentChat = {
   id: number;
   chat_type: "direct" | "group_chat";
   title: string | null;
+  avatar_url: string | null;
   display_name: string | null;
   last_message: {
     id: number;
@@ -53,6 +55,7 @@ type ChatSummary = {
   id: number;
   chat_type: "direct" | "group_chat";
   title: string | null;
+  avatar_url: string | null;
   created_at: string;
   updated_at: string;
   users: User[];
@@ -83,6 +86,8 @@ export default function Contacts() {
   const [groupTitle, setGroupTitle] = useState("");
   const [groupFriendSearch, setGroupFriendSearch] = useState("");
   const [selectedFriendIds, setSelectedFriendIds] = useState<number[]>([]);
+  const [groupAvatar, setGroupAvatar] = useState<File | null>(null);
+  const [groupAvatarPreviewUrl, setGroupAvatarPreviewUrl] = useState<string | null>(null);
   const [creatingGroupChat, setCreatingGroupChat] = useState(false);
 
   useEffect(() => {
@@ -199,6 +204,18 @@ export default function Contacts() {
     return () => window.clearTimeout(timeout);
   }, [searchQuery]);
 
+  useEffect(() => {
+    if (!groupAvatar) {
+      setGroupAvatarPreviewUrl(null);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(groupAvatar);
+    setGroupAvatarPreviewUrl(objectUrl);
+
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [groupAvatar]);
+
   const filteredFriends = useMemo(() => {
     const query = groupFriendSearch.trim().toLowerCase();
 
@@ -228,6 +245,8 @@ export default function Contacts() {
     setGroupTitle("");
     setGroupFriendSearch("");
     setSelectedFriendIds([]);
+    setGroupAvatar(null);
+    setGroupAvatarPreviewUrl(null);
     setShowCreateGroupChat(false);
   }
 
@@ -321,15 +340,21 @@ export default function Contacts() {
     setCreatingGroupChat(true);
 
     try {
+      const formData = new FormData();
+      formData.append("chat[chat_type]", "group_chat");
+      formData.append("chat[title]", trimmedTitle);
+
+      selectedFriendIds.forEach((friendId) => {
+        formData.append("chat[user_ids][]", String(friendId));
+      });
+
+      if (groupAvatar) {
+        formData.append("chat[avatar]", groupAvatar);
+      }
+
       const chat = await apiRequest<ChatSummary>("/chats", {
         method: "POST",
-        body: JSON.stringify({
-          chat: {
-            chat_type: "group_chat",
-            title: trimmedTitle,
-            user_ids: selectedFriendIds,
-          },
-        }),
+        body: formData,
       });
 
       setActionMessage("Gruppenchat wurde erstellt.");
@@ -340,6 +365,7 @@ export default function Contacts() {
           id: chat.id,
           chat_type: chat.chat_type,
           title: chat.title,
+          avatar_url: chat.avatar_url,
           display_name: chat.title,
           last_message: null,
           users: chat.users,
@@ -383,6 +409,24 @@ export default function Contacts() {
       {showCreateGroupChat && (
         <section className={s.groupChatForm}>
           <h2>Neuen Gruppenchat erstellen</h2>
+
+          <div className={s.groupAvatarBox}>
+            <UserAvatar
+              src={groupAvatarPreviewUrl}
+              alt="Gruppenavatar Vorschau"
+              className={s.groupAvatarPreview}
+            />
+          </div>
+
+          <div className={s.formGroup}>
+            <label htmlFor="groupAvatar">Gruppenavatar</label>
+            <input
+              id="groupAvatar"
+              type="file"
+              accept="image/png,image/jpeg,image/jpg,image/webp"
+              onChange={(e) => setGroupAvatar(e.target.files?.[0] ?? null)}
+            />
+          </div>
 
           <div className={s.formGroup}>
             <label htmlFor="groupTitle">Name des Gruppenchats</label>
@@ -429,7 +473,15 @@ export default function Contacts() {
                     className={`${s.friendSelectItem} ${isSelected ? s.friendSelected : ""}`}
                     onClick={() => toggleFriendSelection(friend.id)}
                   >
-                    <span className={s.friendSelectName}>{friend.username}</span>
+                    <span className={s.friendSelectLeft}>
+                      <UserAvatar
+                        src={friend.avatar_url}
+                        alt={friend.username}
+                        className={s.friendSelectAvatar}
+                      />
+                      <span className={s.friendSelectName}>{friend.username}</span>
+                    </span>
+
                     <span className={s.friendSelectAction}>
                       {isSelected ? "Ausgewählt" : "Hinzufügen"}
                     </span>
@@ -483,6 +535,7 @@ export default function Contacts() {
           loadingChats={loadingChats}
           chatsError={chatsError}
           onOpenChat={handleOpenRecentChat}
+          currentUserId={user?.id}
         />
 
         <FriendsSection

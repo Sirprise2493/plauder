@@ -13,15 +13,22 @@ import {
 } from "../utils";
 import type {
   Chat,
+  ChatMembership,
   Message,
   MessageAiCorrection,
   MessageAttachment,
   PendingAttachment,
+  User,
 } from "../types";
 
 type UseChatDetailParams = {
   chatId?: string;
   currentUserId?: number;
+};
+
+type FriendshipResponse = {
+  requester: User;
+  receiver: User;
 };
 
 export function useChatDetail({
@@ -30,6 +37,8 @@ export function useChatDetail({
 }: UseChatDetailParams) {
   const [chat, setChat] = useState<Chat | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [friends, setFriends] = useState<User[]>([]);
+  const [memberSearch, setMemberSearch] = useState("");
   const [newMessage, setNewMessage] = useState("");
   const [pendingAttachments, setPendingAttachments] = useState<PendingAttachment[]>([]);
   const [isDragActive, setIsDragActive] = useState(false);
@@ -44,36 +53,41 @@ export function useChatDetail({
 
   const [loadingChat, setLoadingChat] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(true);
+  const [loadingFriends, setLoadingFriends] = useState(false);
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [addingMemberId, setAddingMemberId] = useState<number | null>(null);
+  const [leavingChat, setLeavingChat] = useState(false);
 
   const [error, setError] = useState("");
   const [sendError, setSendError] = useState("");
+  const [membershipMessage, setMembershipMessage] = useState("");
+  const [membershipError, setMembershipError] = useState("");
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  useEffect(() => {
-    async function loadChat() {
-      if (!chatId) return;
+  const loadChat = useCallback(async () => {
+    if (!chatId) return;
 
-      setLoadingChat(true);
-      setError("");
+    setLoadingChat(true);
+    setError("");
 
-      try {
-        const data = await apiRequest<Chat>(`/chats/${chatId}`, {
-          method: "GET",
-        });
+    try {
+      const data = await apiRequest<Chat>(`/chats/${chatId}`, {
+        method: "GET",
+      });
 
-        setChat(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Chat konnte nicht geladen werden");
-      } finally {
-        setLoadingChat(false);
-      }
+      setChat(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Chat konnte nicht geladen werden");
+    } finally {
+      setLoadingChat(false);
     }
-
-    void loadChat();
   }, [chatId]);
+
+  useEffect(() => {
+    void loadChat();
+  }, [loadChat]);
 
   const loadMessages = useCallback(
     async (options?: { silent?: boolean }) => {
@@ -124,6 +138,37 @@ export function useChatDetail({
   }, [chatId, loadMessages]);
 
   useEffect(() => {
+    async function loadFriends() {
+      if (!chat || chat.chat_type !== "group_chat" || !currentUserId) return;
+
+      setLoadingFriends(true);
+      setMembershipError("");
+
+      try {
+        const friendships = await apiRequest<FriendshipResponse[]>("/friendships", {
+          method: "GET",
+        });
+
+        const mappedFriends = friendships.map((friendship) =>
+          friendship.requester.id === currentUserId
+            ? friendship.receiver
+            : friendship.requester
+        );
+
+        setFriends(mappedFriends);
+      } catch (err) {
+        setMembershipError(
+          err instanceof Error ? err.message : "Freunde konnten nicht geladen werden"
+        );
+      } finally {
+        setLoadingFriends(false);
+      }
+    }
+
+    void loadFriends();
+  }, [chat, currentUserId]);
+
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
@@ -147,6 +192,28 @@ export function useChatDetail({
     const otherUser = chat.users.find((member) => member.id !== currentUserId);
     return otherUser?.username || "Direktchat";
   }, [chat, currentUserId]);
+
+  const chatAvatarUrl = useMemo(() => {
+    if (!chat) return null;
+
+    if (chat.chat_type === "group_chat") {
+      return chat.avatar_url;
+    }
+
+    const otherUser = chat.users.find((member) => member.id !== currentUserId);
+    return otherUser?.avatar_url ?? null;
+  }, [chat, currentUserId]);
+
+  const availableFriends = useMemo(() => {
+    const existingUserIds = new Set(chat?.users.map((member) => member.id) ?? []);
+    const query = memberSearch.trim().toLowerCase();
+
+    return friends.filter((friend) => {
+      if (existingUserIds.has(friend.id)) return false;
+      if (!query) return true;
+      return friend.username.toLowerCase().includes(query);
+    });
+  }, [friends, chat, memberSearch]);
 
   async function deleteDraftMessage(messageId: number) {
     await apiRequest(`/messages/${messageId}`, {
@@ -471,9 +538,75 @@ export function useChatDetail({
     }
   }
 
+  async function handleAddMember(userId: number) {
+    if (!chatId || !chat || chat.chat_type !== "group_chat") return;
+
+    setAddingMemberId(userId);
+    setMembershipMessage("");
+    setMembershipError("");
+
+    try {
+      await apiRequest(`/chats/${chatId}/chat_memberships`, {
+        method: "POST",
+        body: JSON.stringify({
+          chat_membership: {
+            user_id: userId,
+          },
+        }),
+      });
+
+      setMembershipMessage("Mitglied wurde hinzugefügt.");
+      await loadChat();
+    } catch (err) {
+      setMembershipError(
+        err instanceof Error ? err.message : "Mitglied konnte nicht hinzugefügt werden"
+      );
+    } finally {
+      setAddingMemberId(null);
+    }
+  }
+
+  async function handleLeaveChat() {
+    if (!chatId || !chat || chat.chat_type !== "group_chat" || !currentUserId) {
+      return false;
+    }
+
+    setLeavingChat(true);
+    setMembershipMessage("");
+    setMembershipError("");
+
+    try {
+      const memberships = await apiRequest<ChatMembership[]>(`/chats/${chatId}/chat_memberships`, {
+        method: "GET",
+      });
+
+      const myMembership = memberships.find((membership) => membership.user.id === currentUserId);
+
+      if (!myMembership) {
+        throw new Error("Deine Mitgliedschaft konnte nicht gefunden werden");
+      }
+
+      await apiRequest(`/chats/${chatId}/chat_memberships/${myMembership.id}`, {
+        method: "DELETE",
+      });
+
+      return true;
+    } catch (err) {
+      setMembershipError(
+        err instanceof Error ? err.message : "Gruppenchat konnte nicht verlassen werden"
+      );
+      return false;
+    } finally {
+      setLeavingChat(false);
+    }
+  }
+
   return {
     chat,
     messages,
+    friends,
+    availableFriends,
+    memberSearch,
     newMessage,
     pendingAttachments,
     isDragActive,
@@ -486,14 +619,21 @@ export function useChatDetail({
     improvingText,
     loadingChat,
     loadingMessages,
+    loadingFriends,
     sendingMessage,
+    addingMemberId,
+    leavingChat,
     error,
     sendError,
+    membershipMessage,
+    membershipError,
     messagesEndRef,
     fileInputRef,
     chatDisplayTitle,
+    chatAvatarUrl,
     setActiveImageUrl,
     setActiveImageName,
+    setMemberSearch,
     handleFileInputChange,
     handleRemovePendingAttachment,
     handleDrop,
@@ -504,5 +644,7 @@ export function useChatDetail({
     handleSendMessage,
     handleMessageKeyDown,
     handleDownloadAttachment,
+    handleAddMember,
+    handleLeaveChat,
   };
 }

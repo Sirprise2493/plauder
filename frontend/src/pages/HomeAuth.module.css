@@ -48,6 +48,20 @@
   gap: 12px;
 }
 
+.avatarSection {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.avatarPreview {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #dbeafe;
+}
+
 .label {
   display: grid;
   gap: 6px;
@@ -60,6 +74,8 @@
   border-radius: 8px;
   border: 1px solid #d0d7de;
   font-size: 0.95rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .primaryButton {
