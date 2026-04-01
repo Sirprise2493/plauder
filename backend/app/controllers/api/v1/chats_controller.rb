@@ -19,11 +19,11 @@ module Api
         chats = Chat
           .includes(:users, messages: :sender)
           .joins(:chat_memberships)
-          .joins(:messages)
+          .left_joins(:messages)
           .where(chat_memberships: { user_id: current_user.id })
           .select("chats.*, MAX(messages.created_at) AS last_message_at")
           .group("chats.id")
-          .order("last_message_at DESC")
+          .order(Arel.sql("COALESCE(MAX(messages.created_at), chats.created_at) DESC"))
           .limit(5)
 
         render json: chats.map { |chat| serialize_recent_chat(chat) }
@@ -60,17 +60,27 @@ module Api
       end
 
       def create
-        chat = Chat.new(chat_params)
-        chat.save!
-        render json: chat, status: :created
+        if chat_params[:chat_type] == "group_chat"
+          return create_group_chat!
+        end
+
+        render json: { error: "Direktchats bitte über /chats/direct_with/:user_id erstellen" }, status: :unprocessable_entity
       end
 
       def update
-        @chat.update!(chat_params)
-        render json: @chat
+        unless @chat.users.exists?(id: current_user.id)
+          return render json: { error: "Nicht erlaubt" }, status: :forbidden
+        end
+
+        @chat.update!(chat_params.except(:user_ids))
+        render json: serialize_chat(@chat)
       end
 
       def destroy
+        unless @chat.users.exists?(id: current_user.id)
+          return render json: { error: "Nicht erlaubt" }, status: :forbidden
+        end
+
         @chat.destroy!
         head :no_content
       end
@@ -82,7 +92,48 @@ module Api
       end
 
       def chat_params
-        params.require(:chat).permit(:chat_type, :title)
+        params.require(:chat).permit(:chat_type, :title, user_ids: [])
+      end
+
+      def create_group_chat!
+        selected_user_ids = Array(chat_params[:user_ids]).map(&:to_i).uniq - [current_user.id]
+
+        if selected_user_ids.empty?
+          return render json: { error: "Mindestens ein Freund muss ausgewählt werden" }, status: :unprocessable_entity
+        end
+
+        friend_ids = Friendship
+          .where(friendship_status: :accepted, active: true)
+          .where(
+            "(requester_id = :current_user_id AND receiver_id IN (:selected_ids)) OR (receiver_id = :current_user_id AND requester_id IN (:selected_ids))",
+            current_user_id: current_user.id,
+            selected_ids: selected_user_ids
+          )
+          .pluck(:requester_id, :receiver_id)
+          .flatten
+          .uniq - [current_user.id]
+
+        invalid_ids = selected_user_ids - friend_ids
+        if invalid_ids.any?
+          return render json: { error: "Es können nur Freunde hinzugefügt werden" }, status: :forbidden
+        end
+
+        chat = nil
+
+        Chat.transaction do
+          chat = Chat.create!(
+            chat_type: :group_chat,
+            title: chat_params[:title]
+          )
+
+          ChatMembership.create!(chat: chat, user: current_user)
+
+          selected_user_ids.each do |user_id|
+            ChatMembership.create!(chat: chat, user_id: user_id)
+          end
+        end
+
+        render json: serialize_chat(chat.reload), status: :created
       end
 
       def serialize_chat(chat)

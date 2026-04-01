@@ -22,6 +22,7 @@
 .topActions {
   display: flex;
   justify-content: flex-end;
+  gap: 12px;
   margin: 1rem 0;
 }
 
@@ -33,4 +34,125 @@
   padding: 0.7rem 1rem;
   border-radius: 10px;
   font-weight: 600;
+}
+
+.groupChatButton {
+  display: inline-block;
+  background: #111827;
+  color: white;
+  border: none;
+  padding: 0.7rem 1rem;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.groupChatForm {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.groupChatForm h2 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-size: 1.2rem;
+  color: #111827;
+}
+
+.formGroup {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.formGroup label {
+  font-weight: 600;
+  color: #374151;
+}
+
+.formGroup input {
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.selectedInfo {
+  margin-bottom: 12px;
+  color: #4b5563;
+  font-size: 0.95rem;
+}
+
+.friendSelectionList {
+  display: grid;
+  gap: 10px;
+  max-height: 320px;
+  overflow-y: auto;
+  margin-bottom: 18px;
+}
+
+.friendSelectItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-align: left;
+  width: 100%;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  border-radius: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.friendSelected {
+  border-color: #2563eb;
+  background: #dbeafe;
+}
+
+.friendSelectName {
+  font-weight: 600;
+  color: #111827;
+}
+
+.friendSelectAction {
+  font-size: 0.92rem;
+  color: #4b5563;
+}
+
+.groupChatActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.cancelGroupChatButton {
+  background: #e5e7eb;
+  color: #111827;
+  border: none;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.createGroupChatSubmit {
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.createGroupChatSubmit:disabled,
+.cancelGroupChatButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
