@@ -6,10 +6,12 @@ import type { AuthUser, UserStatus } from "../services/authApi";
 import UserAvatar from "../components/UserAvatar";
 import s from "./ProfilePage.module.css";
 
+/* Antwort für /me */
 type MeResponse = {
   user: AuthUser;
 };
 
+/* Antwort für Profil-Update */
 type UpdateUserResponse = {
   user: AuthUser;
 };
@@ -18,17 +20,20 @@ export default function ProfilePage() {
   const navigate = useNavigate();
   const { user, refreshMe } = useAuth();
 
+  /* Formularzustand */
   const [username, setUsername] = useState("");
   const [status, setStatus] = useState<UserStatus>("offline");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatar, setAvatar] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
+  /* Lade- und Feedback-Zustände */
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
+  /* Profildaten beim Laden der Seite abrufen */
   useEffect(() => {
     async function loadProfile() {
       setLoading(true);
@@ -52,6 +57,7 @@ export default function ProfilePage() {
     void loadProfile();
   }, []);
 
+  /* Lokale Vorschau für ein neu ausgewähltes Avatar-Bild */
   useEffect(() => {
     if (!avatar) {
       setPreviewUrl(null);
@@ -64,6 +70,7 @@ export default function ProfilePage() {
     return () => URL.revokeObjectURL(objectUrl);
   }, [avatar]);
 
+  /* Formular absenden */
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!user) return;
@@ -103,71 +110,97 @@ export default function ProfilePage() {
   }
 
   if (loading) {
-    return <div className={s.wrapper}>Profil wird geladen...</div>;
+    return <div className={s.loadingState}>Profil wird geladen...</div>;
   }
 
   return (
     <div className={s.wrapper}>
-      <div className={s.card}>
+      <section className={s.card} aria-labelledby="profile-title">
         <div className={s.headerRow}>
-          <h1 className={s.title}>Mein Profil</h1>
+          <div className={s.headerText}>
+            <p className={s.eyebrow}>Account</p>
+            <h1 id="profile-title" className={s.title}>
+              Mein Profil
+            </h1>
+          </div>
+
           <Link to="/contacts" className={s.backLink}>
-            Zurück zu Contacts
+            Zurück
           </Link>
         </div>
 
-        {successMessage && <p className={s.success}>{successMessage}</p>}
-        {errorMessage && <p className={s.error}>{errorMessage}</p>}
+        {successMessage && <p className="uiMessage uiMessageSuccess">{successMessage}</p>}
+        {errorMessage && <p className="uiMessage uiMessageError">{errorMessage}</p>}
 
         <div className={s.avatarBox}>
-          <UserAvatar
-            src={previewUrl || avatarUrl}
-            alt="Profilbild"
-            className={s.avatar}
-          />
+          {previewUrl ? (
+            <img src={previewUrl} alt="Profilbild Vorschau" className={s.avatar} />
+          ) : (
+            <UserAvatar src={avatarUrl} alt="Profilbild" className={s.avatar} />
+          )}
         </div>
 
-        <form onSubmit={handleSubmit} className={s.form}>
-          <label className={s.label}>
-            Username
+        <form onSubmit={handleSubmit} className={`uiForm ${s.form}`}>
+          <div className="uiField">
+            <label className="uiLabel" htmlFor="username">
+              Username
+            </label>
             <input
+              id="username"
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className={s.input}
+              className={`uiInput ${s.inputReset}`}
               minLength={3}
               maxLength={30}
               required
             />
-          </label>
+          </div>
 
-          <label className={s.label}>
-            Status
+          <div className="uiField">
+            <label className="uiLabel" htmlFor="status">
+              Status
+            </label>
             <select
+              id="status"
               value={status}
               onChange={(e) => setStatus(e.target.value as UserStatus)}
-              className={s.input}
+              className={`uiSelect ${s.inputReset}`}
             >
               <option value="offline">offline</option>
               <option value="online">online</option>
             </select>
-          </label>
+          </div>
 
-          <label className={s.label}>
-            Neues Profilbild
-            <input
-              type="file"
-              accept="image/png,image/jpeg,image/jpg,image/webp"
-              onChange={(e) => setAvatar(e.target.files?.[0] ?? null)}
-              className={s.input}
-            />
-          </label>
+          <div className="uiField">
+            <span className="uiLabel">Neues Profilbild</span>
 
-          <button type="submit" disabled={saving} className={s.primaryButton}>
+            <label className={`uiFileUpload ${s.fileUploadCustom}`}>
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/jpg,image/webp"
+                onChange={(e) => setAvatar(e.target.files?.[0] ?? null)}
+                className="uiFileInput"
+              />
+
+              <span className="uiFileButton">Bild auswählen</span>
+              <span className="uiFileName">
+                {avatar ? avatar.name : "Kein neues Bild ausgewählt"}
+              </span>
+            </label>
+
+            <span className="uiHint">Erlaubt: PNG, JPG, JPEG, WEBP</span>
+          </div>
+
+          <button
+            type="submit"
+            disabled={saving}
+            className={`uiButton uiButtonPrimary uiButtonBlock ${s.submitButton}`}
+          >
             {saving ? "Speichert..." : "Profil speichern"}
           </button>
         </form>
-      </div>
+      </section>
     </div>
   );
 }
