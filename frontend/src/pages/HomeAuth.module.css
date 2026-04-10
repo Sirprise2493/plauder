@@ -1,115 +1,136 @@
+/* =========================================================
+   HomeAuth
+   Hier bleibt nur noch seitenbezogenes Layout.
+   Allgemeine Formular- und Button-Styles kommen aus:
+   - forms.css
+   - buttons.css
+   ========================================================= */
+
 .wrapper {
   min-height: 100vh;
   display: grid;
   place-items: center;
-  background: #f4f6f8;
-  padding: 24px;
+  padding: var(--space-4);
+  background: var(--gradient-page);
 }
 
 .card {
-  width: 100%;
-  max-width: 420px;
-  background: #fff;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  width: min(100%, var(--content-max-width-mobile));
+  min-height: 640px;
+  display: grid;
+  align-content: start;
+  gap: var(--space-4);
+
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(12px);
+}
+
+.header {
+  display: grid;
+  gap: var(--space-2);
+  text-align: center;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-accent);
 }
 
 .title {
-  margin: 0 0 16px;
-  font-size: 1.5rem;
-  text-align: center;
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 2.4rem);
+  line-height: 1.1;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+}
+
+.subtitle {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-soft);
 }
 
 .tabRow {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: var(--space-2);
+  padding: 4px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--color-border);
 }
 
 .tabButton {
-  padding: 10px 12px;
-  border-radius: 8px;
-  border: 1px solid #d0d7de;
-  background: #fff;
+  min-height: 44px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-text-soft);
+  font-weight: var(--font-weight-semibold);
   cursor: pointer;
-  font-weight: 600;
+  transition: transform 0.18s ease, opacity 0.18s ease, color 0.18s ease,
+    background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.tabButton:hover {
+  transform: translateY(-1px);
 }
 
 .activeTab {
-  background: #111827;
-  color: #fff;
-  border-color: #111827;
+  background: var(--gradient-primary);
+  color: var(--color-text-inverse);
+  box-shadow: var(--shadow-sm);
 }
 
 .form {
-  display: grid;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .avatarSection {
   display: flex;
   justify-content: center;
-  margin-bottom: 8px;
+  margin-bottom: var(--space-1);
 }
 
 .avatarPreview {
-  width: 120px;
-  height: 120px;
+  width: 104px;
+  height: 104px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid #dbeafe;
+  border: 4px solid rgba(255, 255, 255, 0.9);
+  box-shadow: var(--shadow-sm);
 }
 
-.label {
-  display: grid;
-  gap: 6px;
-  font-size: 0.95rem;
-  font-weight: 500;
+/* Kleine HomeAuth-spezifische Anpassung für das Upload-Feld */
+.fileUploadCustom {
+  min-height: 58px;
 }
 
-.input {
-  padding: 10px 12px;
-  border-radius: 8px;
-  border: 1px solid #d0d7de;
-  font-size: 0.95rem;
+/* Reserve für mögliche spätere lokale Input-Anpassungen */
+.inputReset {
   width: 100%;
-  box-sizing: border-box;
 }
 
-.primaryButton {
-  margin-top: 4px;
-  padding: 12px 14px;
-  border-radius: 8px;
-  border: none;
-  background: #2563eb;
-  color: white;
-  cursor: pointer;
-  font-weight: 700;
+/* Zusätzlicher Abstand vor dem Submit-Button */
+.submitButton {
+  margin-top: var(--space-2);
 }
 
-.primaryButton:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
+@media (min-width: 480px) {
+  .wrapper {
+    padding: var(--space-6);
+  }
 
-.success {
-  background: #ecfdf5;
-  color: #065f46;
-  border: 1px solid #a7f3d0;
-  padding: 10px 12px;
-  border-radius: 8px;
-  margin-bottom: 12px;
-  font-size: 0.9rem;
-}
-
-.error {
-  background: #fef2f2;
-  color: #991b1b;
-  border: 1px solid #fecaca;
-  padding: 10px 12px;
-  border-radius: 8px;
-  margin-bottom: 12px;
-  font-size: 0.9rem;
+  .card {
+    width: min(100%, var(--content-max-width-tablet));
+    padding: 28px;
+  }
 }
