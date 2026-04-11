@@ -4,6 +4,9 @@ import type { User } from "../types";
 type Props = {
   users: User[];
   currentUserId?: number;
+  showLeaveAction?: boolean;
+  leavingChat?: boolean;
+  onLeaveCurrentUser?: () => void | Promise<void>;
   classNames: {
     card: string;
     title: string;
@@ -17,12 +20,17 @@ type Props = {
     status: string;
     statusOnline: string;
     statusOffline: string;
+    actionWrap: string;
+    leaveButton: string;
   };
 };
 
 export default function ParticipantsCard({
   users,
   currentUserId,
+  showLeaveAction = false,
+  leavingChat = false,
+  onLeaveCurrentUser,
   classNames,
 }: Props) {
   return (
@@ -50,14 +58,27 @@ export default function ParticipantsCard({
                 </div>
               </div>
 
-              <span
-                className={`${classNames.status} ${
-                  member.status === "online"
-                    ? classNames.statusOnline
-                    : classNames.statusOffline
-                }`}
-                title={member.status}
-              />
+              <div className={classNames.actionWrap}>
+                <span
+                  className={`${classNames.status} ${
+                    member.status === "online"
+                      ? classNames.statusOnline
+                      : classNames.statusOffline
+                  }`}
+                  title={member.status}
+                />
+
+                {isMe && showLeaveAction && onLeaveCurrentUser && (
+                  <button
+                    type="button"
+                    className={classNames.leaveButton}
+                    onClick={() => void onLeaveCurrentUser()}
+                    disabled={leavingChat}
+                  >
+                    {leavingChat ? "Verlasse..." : "Verlassen"}
+                  </button>
+                )}
+              </div>
             </li>
           );
         })}

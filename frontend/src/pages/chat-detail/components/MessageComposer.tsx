@@ -184,10 +184,6 @@ export default function MessageComposer({
         </div>
       </form>
 
-      <p className={classNames.inputHint}>
-        Enter = senden, Shift + Enter = Zeilenumbruch, Dateien per Drag & Drop
-        möglich
-      </p>
     </>
   );
 }
