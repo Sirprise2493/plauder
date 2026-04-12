@@ -61,9 +61,13 @@ type ChatSummary = {
   users: User[];
 };
 
+type ContactsView = "discover" | "recent" | "friends" | "groups";
+
 export default function Contacts() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+
+  const [activeView, setActiveView] = useState<ContactsView>("discover");
 
   const [friends, setFriends] = useState<User[]>([]);
   const [recentChats, setRecentChats] = useState<RecentChat[]>([]);
@@ -252,11 +256,6 @@ export default function Contacts() {
     return friends.filter((friend) => friend.username.toLowerCase().includes(query));
   }, [friends, groupFriendSearch]);
 
-  const directChats = useMemo(
-    () => allChats.filter((chat) => chat.chat_type === "direct"),
-    [allChats]
-  );
-
   const groupChats = useMemo(
     () => allChats.filter((chat) => chat.chat_type === "group_chat"),
     [allChats]
@@ -432,186 +431,264 @@ export default function Contacts() {
 
   return (
     <div className={s.wrapper}>
-      <ContactsHeader user={user} onLogout={() => void signOut()} />
+      <div className={s.pageShell}>
+        <div className={s.appShell}>
+          <ContactsHeader user={user} onLogout={() => void signOut()} />
 
-      <div className={s.topActions}>
-        <button
-          type="button"
-          className={s.groupChatButton}
-          onClick={() => {
-            setActionMessage("");
-            setShowCreateGroupChat((prev) => !prev);
-          }}
-        >
-          {showCreateGroupChat ? "Abbrechen" : "Gruppenchat erstellen"}
-        </button>
+          <div className={s.topActions}>
+            <button
+              type="button"
+              className={`uiButton uiButtonSecondary ${s.topActionButton}`}
+              onClick={() => {
+                setActionMessage("");
+                setShowCreateGroupChat((prev) => !prev);
+              }}
+            >
+              {showCreateGroupChat ? "Abbrechen" : "Gruppe erstellen"}
+            </button>
 
-        <Link to="/profile" className={s.profileLink}>
-          Mein Profil
-        </Link>
-      </div>
-
-      {actionMessage && <p className={s.actionMessage}>{actionMessage}</p>}
-
-      {showCreateGroupChat && (
-        <section className={s.groupChatForm}>
-          <h2>Neuen Gruppenchat erstellen</h2>
-
-          <div className={s.groupAvatarBox}>
-            <UserAvatar
-              src={groupAvatarPreviewUrl}
-              alt="Gruppenavatar Vorschau"
-              className={s.groupAvatarPreview}
-            />
+            <Link to="/profile" className={s.profileLink}>
+              Mein Profil
+            </Link>
           </div>
 
-          <div className={s.formGroup}>
-            <label htmlFor="groupAvatar">Gruppenavatar</label>
-            <input
-              id="groupAvatar"
-              type="file"
-              accept="image/png,image/jpeg,image/jpg,image/webp"
-              onChange={(e) => setGroupAvatar(e.target.files?.[0] ?? null)}
-            />
-          </div>
+          {actionMessage && <p className="uiMessage uiMessageSuccess">{actionMessage}</p>}
 
-          <div className={s.formGroup}>
-            <label htmlFor="groupTitle">Name des Gruppenchats</label>
-            <input
-              id="groupTitle"
-              type="text"
-              value={groupTitle}
-              onChange={(e) => setGroupTitle(e.target.value)}
-              placeholder="z. B. Familie, Uni, Projektteam"
-              maxLength={100}
-            />
-          </div>
+          {showCreateGroupChat && (
+            <section className={s.groupChatForm}>
+              <div className={s.sectionHead}>
+                <h2 className={s.sectionTitle}>Neuen Gruppenchat erstellen</h2>
+                <p className={s.sectionSubtitle}>
+                  Erstelle eine neue Gruppe mit Namen, Avatar und Freunden.
+                </p>
+              </div>
 
-          <div className={s.formGroup}>
-            <label htmlFor="groupFriendSearch">Freunde suchen</label>
-            <input
-              id="groupFriendSearch"
-              type="text"
-              value={groupFriendSearch}
-              onChange={(e) => setGroupFriendSearch(e.target.value)}
-              placeholder="Nach Username suchen"
-            />
-          </div>
+              <div className={s.groupAvatarBox}>
+                <UserAvatar
+                  src={groupAvatarPreviewUrl}
+                  alt="Gruppenavatar Vorschau"
+                  className={s.groupAvatarPreview}
+                />
+              </div>
 
-          <div className={s.selectedInfo}>Ausgewählte Freunde: {selectedFriendIds.length}</div>
+              <div className="uiForm">
+                <div className="uiField">
+                  <span className="uiLabel">Gruppenavatar</span>
 
-          <div className={s.friendSelectionList}>
-            {loadingFriends ? (
-              <p>Freunde werden geladen...</p>
-            ) : friendsError ? (
-              <p>{friendsError}</p>
-            ) : filteredFriends.length === 0 ? (
-              <p>Keine passenden Freunde gefunden.</p>
-            ) : (
-              filteredFriends.map((friend) => {
-                const isSelected = selectedFriendIds.includes(friend.id);
+                  <label className={s.groupFileUpload}>
+                    <input
+                      id="groupAvatar"
+                      type="file"
+                      accept="image/png,image/jpeg,image/jpg,image/webp"
+                      onChange={(e) => setGroupAvatar(e.target.files?.[0] ?? null)}
+                      className="uiFileInput"
+                    />
 
-                return (
+                    <span className="uiFileButton">Bild auswählen</span>
+                    <span className="uiFileName">
+                      {groupAvatar ? groupAvatar.name : "Kein Bild ausgewählt"}
+                    </span>
+                  </label>
+
+                  <span className="uiHint">Erlaubt: PNG, JPG, JPEG, WEBP</span>
+                </div>
+
+                <div className="uiField">
+                  <label htmlFor="groupTitle" className="uiLabel">
+                    Name des Gruppenchats
+                  </label>
+                  <input
+                    id="groupTitle"
+                    type="text"
+                    value={groupTitle}
+                    onChange={(e) => setGroupTitle(e.target.value)}
+                    placeholder="z. B. Familie, Uni, Projektteam"
+                    maxLength={100}
+                    className="uiInput"
+                  />
+                </div>
+
+                <div className="uiField">
+                  <label htmlFor="groupFriendSearch" className="uiLabel">
+                    Freunde suchen
+                  </label>
+                  <input
+                    id="groupFriendSearch"
+                    type="text"
+                    value={groupFriendSearch}
+                    onChange={(e) => setGroupFriendSearch(e.target.value)}
+                    placeholder="Nach Username suchen"
+                    className="uiInput"
+                  />
+                </div>
+              </div>
+
+              <div className={s.selectedInfo}>
+                Ausgewählte Freunde: <strong>{selectedFriendIds.length}</strong>
+              </div>
+
+              <div className={s.friendSelectionList}>
+                {loadingFriends ? (
+                  <p className={s.inlineInfo}>Freunde werden geladen...</p>
+                ) : friendsError ? (
+                  <p className={s.inlineError}>{friendsError}</p>
+                ) : filteredFriends.length === 0 ? (
+                  <p className={s.inlineInfo}>Keine passenden Freunde gefunden.</p>
+                ) : (
+                  filteredFriends.map((friend) => {
+                    const isSelected = selectedFriendIds.includes(friend.id);
+
+                    return (
+                      <button
+                        key={friend.id}
+                        type="button"
+                        className={`${s.friendSelectItem} ${isSelected ? s.friendSelected : ""}`}
+                        onClick={() => toggleFriendSelection(friend.id)}
+                      >
+                        <span className={s.friendSelectLeft}>
+                          <UserAvatar
+                            src={friend.avatar_url}
+                            alt={friend.username}
+                            className={s.friendSelectAvatar}
+                          />
+                          <span className={s.friendSelectName}>{friend.username}</span>
+                        </span>
+
+                        <span className={s.friendSelectAction}>
+                          {isSelected ? "Ausgewählt" : "Hinzufügen"}
+                        </span>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+
+              <div className={s.groupChatActions}>
+                <button
+                  type="button"
+                  className={`uiButton uiButtonSecondary ${s.cancelGroupChatButton}`}
+                  onClick={resetGroupChatForm}
+                  disabled={creatingGroupChat}
+                >
+                  Abbrechen
+                </button>
+
+                <button
+                  type="button"
+                  className={`uiButton uiButtonPrimary ${s.createGroupChatSubmit}`}
+                  onClick={handleCreateGroupChat}
+                  disabled={creatingGroupChat}
+                >
+                  {creatingGroupChat ? "Erstelle..." : "Gruppenchat erstellen"}
+                </button>
+              </div>
+            </section>
+          )}
+
+          {!showCreateGroupChat && (
+            <>
+              <div className={s.switchBar}>
+                <div className={s.viewSwitch} aria-label="Kontakte Ansicht wechseln">
                   <button
-                    key={friend.id}
                     type="button"
-                    className={`${s.friendSelectItem} ${isSelected ? s.friendSelected : ""}`}
-                    onClick={() => toggleFriendSelection(friend.id)}
+                    className={`${s.viewSwitchButton} ${
+                      activeView === "discover" ? s.viewSwitchButtonActive : ""
+                    }`}
+                    onClick={() => setActiveView("discover")}
                   >
-                    <span className={s.friendSelectLeft}>
-                      <UserAvatar
-                        src={friend.avatar_url}
-                        alt={friend.username}
-                        className={s.friendSelectAvatar}
-                      />
-                      <span className={s.friendSelectName}>{friend.username}</span>
-                    </span>
-
-                    <span className={s.friendSelectAction}>
-                      {isSelected ? "Ausgewählt" : "Hinzufügen"}
-                    </span>
+                    Entdecken
                   </button>
-                );
-              })
-            )}
-          </div>
 
-          <div className={s.groupChatActions}>
-            <button
-              type="button"
-              className={s.cancelGroupChatButton}
-              onClick={resetGroupChatForm}
-              disabled={creatingGroupChat}
-            >
-              Abbrechen
-            </button>
+                  <button
+                    type="button"
+                    className={`${s.viewSwitchButton} ${
+                      activeView === "recent" ? s.viewSwitchButtonActive : ""
+                    }`}
+                    onClick={() => setActiveView("recent")}
+                  >
+                    Letzte Chats
+                  </button>
 
-            <button
-              type="button"
-              className={s.createGroupChatSubmit}
-              onClick={handleCreateGroupChat}
-              disabled={creatingGroupChat}
-            >
-              {creatingGroupChat ? "Erstelle..." : "Gruppenchat erstellen"}
-            </button>
-          </div>
-        </section>
-      )}
+                  <button
+                    type="button"
+                    className={`${s.viewSwitchButton} ${
+                      activeView === "friends" ? s.viewSwitchButtonActive : ""
+                    }`}
+                    onClick={() => setActiveView("friends")}
+                  >
+                    Freunde
+                  </button>
 
-      <div className={s.sections}>
-        <UserSearchSection
-          searchQuery={searchQuery}
-          onSearchQueryChange={setSearchQuery}
-          searchResults={searchResults}
-          loadingSearch={loadingSearch}
-          searchError={searchError}
-          onSendFriendRequest={handleSendFriendRequest}
-        />
+                  <button
+                    type="button"
+                    className={`${s.viewSwitchButton} ${
+                      activeView === "groups" ? s.viewSwitchButtonActive : ""
+                    }`}
+                    onClick={() => setActiveView("groups")}
+                  >
+                    Gruppen
+                  </button>
+                </div>
+              </div>
 
-        <ReceivedRequestsSection
-          receivedRequests={receivedRequests}
-          loadingRequests={loadingRequests}
-          requestsError={requestsError}
-          onRespond={handleRespondToRequest}
-        />
+              <div className={s.contentArea}>
+                {activeView === "discover" && (
+                  <div className={s.stack}>
+                    <UserSearchSection
+                      searchQuery={searchQuery}
+                      onSearchQueryChange={setSearchQuery}
+                      searchResults={searchResults}
+                      loadingSearch={loadingSearch}
+                      searchError={searchError}
+                      onSendFriendRequest={handleSendFriendRequest}
+                    />
 
-        <RecentChatsSection
-          title="Letzte Chats"
-          chats={recentChats}
-          loadingChats={loadingRecentChats}
-          chatsError={recentChatsError}
-          onOpenChat={handleOpenRecentChat}
-          currentUserId={user?.id}
-          emptyMessage="Noch keine Chats vorhanden."
-          showTypeLabel
-        />
+                    <ReceivedRequestsSection
+                      receivedRequests={receivedRequests}
+                      loadingRequests={loadingRequests}
+                      requestsError={requestsError}
+                      onRespond={handleRespondToRequest}
+                    />
+                  </div>
+                )}
 
-        <RecentChatsSection
-          title="Direktchats"
-          chats={directChats}
-          loadingChats={loadingAllChats}
-          chatsError={allChatsError}
-          onOpenChat={handleOpenRecentChat}
-          currentUserId={user?.id}
-          emptyMessage="Noch keine Direktchats vorhanden."
-        />
+                {activeView === "recent" && (
+                  <RecentChatsSection
+                    title="Letzte Chats"
+                    chats={recentChats}
+                    loadingChats={loadingRecentChats}
+                    chatsError={recentChatsError}
+                    onOpenChat={handleOpenRecentChat}
+                    currentUserId={user?.id}
+                    emptyMessage="Noch keine Chats vorhanden."
+                    showTypeLabel
+                  />
+                )}
 
-        <RecentChatsSection
-          title="Gruppenchats"
-          chats={groupChats}
-          loadingChats={loadingAllChats}
-          chatsError={allChatsError}
-          onOpenChat={handleOpenRecentChat}
-          currentUserId={user?.id}
-          emptyMessage="Noch keine Gruppenchats vorhanden."
-        />
+                {activeView === "friends" && (
+                  <FriendsSection
+                    friends={friends}
+                    loadingFriends={loadingFriends}
+                    friendsError={friendsError}
+                    onOpenFriendChat={handleOpenFriendChat}
+                  />
+                )}
 
-        <FriendsSection
-          friends={friends}
-          loadingFriends={loadingFriends}
-          friendsError={friendsError}
-          onOpenFriendChat={handleOpenFriendChat}
-        />
+                {activeView === "groups" && (
+                  <RecentChatsSection
+                    title="Gruppenchats"
+                    chats={groupChats}
+                    loadingChats={loadingAllChats}
+                    chatsError={allChatsError}
+                    onOpenChat={handleOpenRecentChat}
+                    currentUserId={user?.id}
+                    emptyMessage="Noch keine Gruppenchats vorhanden."
+                  />
+                )}
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
