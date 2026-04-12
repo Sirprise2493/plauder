@@ -186,6 +186,10 @@
 }
 
 .groupArea {
+  min-height: 0;
+  height: 100%;
+  display: grid;
+  grid-template-rows: 1fr 1fr;
   background:
     linear-gradient(
       180deg,
@@ -547,8 +551,12 @@
 
 .addMembersCard,
 .participantsCard {
+  min-height: 0;
+  height: 100%;
   padding: 16px 16px 18px;
   background: transparent;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
 }
 
 .addMembersCard {
@@ -582,14 +590,20 @@
 
 .addableFriendsList,
 .participantsList {
+  min-height: 0;
   display: grid;
   gap: 10px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(15, 23, 42, 0.12) transparent;
 }
 
 .participantsList {
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 0 2px 0 0;
 }
 
 .addableFriendItem,
@@ -847,5 +861,34 @@
   .attachmentVideo,
   .attachmentAudio {
     max-width: 320px;
+  }
+}
+
+
+
+.addableFriendsList::-webkit-scrollbar,
+.participantsList::-webkit-scrollbar {
+  width: 3px;
+}
+
+.addableFriendsList::-webkit-scrollbar-track,
+.participantsList::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.addableFriendsList::-webkit-scrollbar-thumb,
+.participantsList::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.08);
+  border-radius: 999px;
+}
+
+.addableFriendsList::-webkit-scrollbar-thumb:hover,
+.participantsList::-webkit-scrollbar-thumb:hover {
+  background: rgba(15, 23, 42, 0.16);
+}
+
+@media (max-width: 479px) {
+  .groupArea {
+    grid-template-rows: minmax(240px, 1fr) minmax(280px, 1fr);
   }
 }
