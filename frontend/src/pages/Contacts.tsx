@@ -67,17 +67,20 @@ export default function Contacts() {
 
   const [friends, setFriends] = useState<User[]>([]);
   const [recentChats, setRecentChats] = useState<RecentChat[]>([]);
+  const [allChats, setAllChats] = useState<ChatSummary[]>([]);
   const [receivedRequests, setReceivedRequests] = useState<Friendship[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<User[]>([]);
 
   const [loadingFriends, setLoadingFriends] = useState(true);
-  const [loadingChats, setLoadingChats] = useState(true);
+  const [loadingRecentChats, setLoadingRecentChats] = useState(true);
+  const [loadingAllChats, setLoadingAllChats] = useState(true);
   const [loadingRequests, setLoadingRequests] = useState(true);
   const [loadingSearch, setLoadingSearch] = useState(false);
 
   const [friendsError, setFriendsError] = useState("");
-  const [chatsError, setChatsError] = useState("");
+  const [recentChatsError, setRecentChatsError] = useState("");
+  const [allChatsError, setAllChatsError] = useState("");
   const [requestsError, setRequestsError] = useState("");
   const [searchError, setSearchError] = useState("");
   const [actionMessage, setActionMessage] = useState("");
@@ -123,8 +126,8 @@ export default function Contacts() {
     async function loadRecentChats() {
       if (!user) return;
 
-      setLoadingChats(true);
-      setChatsError("");
+      setLoadingRecentChats(true);
+      setRecentChatsError("");
 
       try {
         const chats = await apiRequest<RecentChat[]>("/chats/recent", {
@@ -133,15 +136,40 @@ export default function Contacts() {
 
         setRecentChats(chats);
       } catch (err) {
-        setChatsError(
-          err instanceof Error ? err.message : "Chats konnten nicht geladen werden"
+        setRecentChatsError(
+          err instanceof Error ? err.message : "Letzte Chats konnten nicht geladen werden"
         );
       } finally {
-        setLoadingChats(false);
+        setLoadingRecentChats(false);
       }
     }
 
     void loadRecentChats();
+  }, [user]);
+
+  useEffect(() => {
+    async function loadAllChats() {
+      if (!user) return;
+
+      setLoadingAllChats(true);
+      setAllChatsError("");
+
+      try {
+        const chats = await apiRequest<ChatSummary[]>("/chats", {
+          method: "GET",
+        });
+
+        setAllChats(chats);
+      } catch (err) {
+        setAllChatsError(
+          err instanceof Error ? err.message : "Chats konnten nicht geladen werden"
+        );
+      } finally {
+        setLoadingAllChats(false);
+      }
+    }
+
+    void loadAllChats();
   }, [user]);
 
   useEffect(() => {
@@ -221,10 +249,18 @@ export default function Contacts() {
 
     if (!query) return friends;
 
-    return friends.filter((friend) =>
-      friend.username.toLowerCase().includes(query)
-    );
+    return friends.filter((friend) => friend.username.toLowerCase().includes(query));
   }, [friends, groupFriendSearch]);
+
+  const directChats = useMemo(
+    () => allChats.filter((chat) => chat.chat_type === "direct"),
+    [allChats]
+  );
+
+  const groupChats = useMemo(
+    () => allChats.filter((chat) => chat.chat_type === "group_chat"),
+    [allChats]
+  );
 
   function addFriendIfMissing(friendToAdd: User) {
     setFriends((prev) => {
@@ -314,6 +350,15 @@ export default function Contacts() {
         method: "GET",
       });
 
+      setAllChats((prev) => {
+        const exists = prev.some((existingChat) => existingChat.id === chat.id);
+        if (exists) {
+          return prev.map((existingChat) => (existingChat.id === chat.id ? chat : existingChat));
+        }
+
+        return [chat, ...prev];
+      });
+
       navigate(`/chats/${chat.id}`);
     } catch (err) {
       setActionMessage(
@@ -372,6 +417,8 @@ export default function Contacts() {
         },
         ...prev.filter((existingChat) => existingChat.id !== chat.id),
       ]);
+
+      setAllChats((prev) => [chat, ...prev.filter((existingChat) => existingChat.id !== chat.id)]);
 
       navigate(`/chats/${chat.id}`);
     } catch (err) {
@@ -451,9 +498,7 @@ export default function Contacts() {
             />
           </div>
 
-          <div className={s.selectedInfo}>
-            Ausgewählte Freunde: {selectedFriendIds.length}
-          </div>
+          <div className={s.selectedInfo}>Ausgewählte Freunde: {selectedFriendIds.length}</div>
 
           <div className={s.friendSelectionList}>
             {loadingFriends ? (
@@ -531,11 +576,34 @@ export default function Contacts() {
         />
 
         <RecentChatsSection
-          recentChats={recentChats}
-          loadingChats={loadingChats}
-          chatsError={chatsError}
+          title="Letzte Chats"
+          chats={recentChats}
+          loadingChats={loadingRecentChats}
+          chatsError={recentChatsError}
           onOpenChat={handleOpenRecentChat}
           currentUserId={user?.id}
+          emptyMessage="Noch keine Chats vorhanden."
+          showTypeLabel
+        />
+
+        <RecentChatsSection
+          title="Direktchats"
+          chats={directChats}
+          loadingChats={loadingAllChats}
+          chatsError={allChatsError}
+          onOpenChat={handleOpenRecentChat}
+          currentUserId={user?.id}
+          emptyMessage="Noch keine Direktchats vorhanden."
+        />
+
+        <RecentChatsSection
+          title="Gruppenchats"
+          chats={groupChats}
+          loadingChats={loadingAllChats}
+          chatsError={allChatsError}
+          onOpenChat={handleOpenRecentChat}
+          currentUserId={user?.id}
+          emptyMessage="Noch keine Gruppenchats vorhanden."
         />
 
         <FriendsSection
