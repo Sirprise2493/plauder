@@ -87,3 +87,25 @@ Im **`backend`**-Ordner musst du eine **`.env`**-Datei erstellen.
 ```env
 CLOUDINARY_URL=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 OPENAI_API_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+```
+---
+
+## Installation
+
+### 1. Repository klonen
+
+```bash
+git clone <DEIN-REPO-URL>
+cd <DEIN-PROJEKTORDNER>
+```
+### 2. Backend einrichten
+```bash
+cd backend
+bundle install
+bin/rails db:migrate
+bin/rails db:seed
+bin/rails server
+```
+Das Backend läuft danach standardmäßig auf:
+http://localhost:3000
