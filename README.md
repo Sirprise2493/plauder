@@ -109,3 +109,35 @@ bin/rails server
 ```
 Das Backend läuft danach standardmäßig auf:
 http://localhost:3000
+
+### 3. Frontend einrichten
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Das Frontend läuft danach standardmäßig auf:
+http://localhost:5173
+
+## Nutzung
+
+Nach dem Start stehen dir unter anderem folgende Funktionen zur Verfügung:
+
+- Anmeldung mit dem Seed-User
+- Durchsuchen von Kontakten
+- Senden und Annehmen von Freundschaftsanfragen
+- Öffnen von Direktchats
+- Verwalten von Gruppenchats
+- Senden von Nachrichten
+- Hochladen von Anhängen
+- Nutzung der KI-Korrektur für Nachrichten
+- Aktualisieren von Profilbild und Status
+
+## Architekturüberblick
+
+Plauder ist in ein Frontend und ein API-Backend aufgeteilt:
+
+- **Frontend:** React + TypeScript
+- **Backend:** Rails API für Authentifizierung und Datenlogik
+- **Storage:** Active Storage in Kombination mit Cloudinary
+- **KI:** OpenAI zur Textverbesserung und Moderation
