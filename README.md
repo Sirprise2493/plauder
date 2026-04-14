@@ -44,36 +44,50 @@ Die Anwendung bietet Direktchats, Gruppenchats, Freundschaften, Datei-Uploads, K
 <table>
   <tr>
     <td align="center">
-      <strong>Sign In</strong><br />
-      <img src="readme_files/screenshots/sign_in.png" alt="Sign In" width="220" />
+      <a href="readme_files/screenshots/sign_in.png">
+        <img src="readme_files/screenshots/sign_in.png" alt="Sign In" width="220" />
+      </a>
+      <br /><strong>Sign In</strong>
     </td>
     <td align="center">
-      <strong>Sign Up</strong><br />
-      <img src="readme_files/screenshots/sign_up.png" alt="Sign Up" width="220" />
+      <a href="readme_files/screenshots/sign_up.png">
+        <img src="readme_files/screenshots/sign_up.png" alt="Sign Up" width="220" />
+      </a>
+      <br /><strong>Sign Up</strong>
     </td>
     <td align="center">
-      <strong>Contacts</strong><br />
-      <img src="readme_files/screenshots/contacts.png" alt="Contacts" width="220" />
-    </td>
-  </tr>
-  <tr>
-    <td align="center">
-      <strong>Direktchat</strong><br />
-      <img src="readme_files/screenshots/chat_direct.png" alt="Direktchat" width="220" />
-    </td>
-    <td align="center">
-      <strong>Gruppenchat – Chat</strong><br />
-      <img src="readme_files/screenshots/chat_group.png" alt="Gruppenchat Chat" width="220" />
-    </td>
-    <td align="center">
-      <strong>Gruppenverwaltung</strong><br />
-      <img src="readme_files/screenshots/chat_group2.png" alt="Gruppenchat Gruppe" width="220" />
+      <a href="readme_files/screenshots/contacts.png">
+        <img src="readme_files/screenshots/contacts.png" alt="Contacts" width="220" />
+      </a>
+      <br /><strong>Contacts</strong>
     </td>
   </tr>
   <tr>
     <td align="center">
-      <strong>Profil bearbeiten</strong><br />
-      <img src="readme_files/screenshots/profile_editor.png" alt="Profil bearbeiten" width="220" />
+      <a href="readme_files/screenshots/chat_direct.png">
+        <img src="readme_files/screenshots/chat_direct.png" alt="Direktchat" width="220" />
+      </a>
+      <br /><strong>Direktchat</strong>
+    </td>
+    <td align="center">
+      <a href="readme_files/screenshots/chat_group.png">
+        <img src="readme_files/screenshots/chat_group.png" alt="Gruppenchat Chat" width="220" />
+      </a>
+      <br /><strong>Gruppenchat – Chat</strong>
+    </td>
+    <td align="center">
+      <a href="readme_files/screenshots/chat_group2.png">
+        <img src="readme_files/screenshots/chat_group2.png" alt="Gruppenverwaltung" width="220" />
+      </a>
+      <br /><strong>Gruppenverwaltung</strong>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <a href="readme_files/screenshots/profile_editor.png">
+        <img src="readme_files/screenshots/profile_editor.png" alt="Profil bearbeiten" width="220" />
+      </a>
+      <br /><strong>Profil bearbeiten</strong>
     </td>
     <td></td>
     <td></td>
