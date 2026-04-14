@@ -192,7 +192,7 @@ Das Datenmodell von Plauder deckt die folgenden Kernbereiche ab:
 
 Das Entity-Relationship-Diagramm (ERD) zeigt die Beziehungen zwischen den zentralen Entitäten des Systems und bietet einen strukturellen Überblick über das Datenmodell.
 
-````md
+
 ```mermaid
 erDiagram
   users {
@@ -315,7 +315,7 @@ Unter `api/v1` stellt das Backend unter anderem Endpunkte für folgende Bereiche
 - Calls
 - Call Participants
 
-````
+```
 
 
 ## Projektstruktur
