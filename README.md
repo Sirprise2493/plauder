@@ -41,26 +41,44 @@ Die Anwendung bietet Direktchats, Gruppenchats, Freundschaften, Datei-Uploads, K
 
 ## Screenshots
 
-### Sign In
-![Sign In](readme_files/screenshots/sign_in.png)
-
-### Sign Up
-![Sign Up](readme_files/screenshots/sign_up.png)
-
-### Contacts
-![Contacts](readme_files/screenshots/contacts.png)
-
-### Direktchat
-![Direktchat](readme_files/screenshots/chat_direct.png)
-
-### Gruppenchat – Chat-Ansicht
-![Gruppenchat Chat](readme_files/screenshots/chat_group.png)
-
-### Gruppenchat – Gruppenverwaltung
-![Gruppenchat Gruppe](readme_files/screenshots/chat_group2.png)
-
-### Profil bearbeiten
-![Profil bearbeiten](readme_files/screenshots/profile_editor.png)
+<table>
+  <tr>
+    <td align="center">
+      <strong>Sign In</strong><br />
+      <img src="readme_files/screenshots/sign_in.png" alt="Sign In" width="220" />
+    </td>
+    <td align="center">
+      <strong>Sign Up</strong><br />
+      <img src="readme_files/screenshots/sign_up.png" alt="Sign Up" width="220" />
+    </td>
+    <td align="center">
+      <strong>Contacts</strong><br />
+      <img src="readme_files/screenshots/contacts.png" alt="Contacts" width="220" />
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <strong>Direktchat</strong><br />
+      <img src="readme_files/screenshots/chat_direct.png" alt="Direktchat" width="220" />
+    </td>
+    <td align="center">
+      <strong>Gruppenchat – Chat</strong><br />
+      <img src="readme_files/screenshots/chat_group.png" alt="Gruppenchat Chat" width="220" />
+    </td>
+    <td align="center">
+      <strong>Gruppenverwaltung</strong><br />
+      <img src="readme_files/screenshots/chat_group2.png" alt="Gruppenchat Gruppe" width="220" />
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <strong>Profil bearbeiten</strong><br />
+      <img src="readme_files/screenshots/profile_editor.png" alt="Profil bearbeiten" width="220" />
+    </td>
+    <td></td>
+    <td></td>
+  </tr>
+</table>
 
 ---
 
