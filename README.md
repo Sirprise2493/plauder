@@ -281,9 +281,11 @@ Unter `api/v1` stellt das Backend unter anderem Endpunkte für folgende Bereiche
 - Message Attachments
 - Message AI Corrections
 - Message Warnings
+- Calls
+- Call Participants
 
-## API-Bereiche
 
+## Projektstruktur
 .
 ├── backend
 │   ├── app
